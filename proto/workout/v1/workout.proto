@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package workout.v1;
+
+import "google/api/annotations.proto";
+import "google/type/date.proto";
+
+option go_package = "github.com/qkitzero/workout-service/gen/go/workout/v1";
+
+service WorkoutService {
+}
