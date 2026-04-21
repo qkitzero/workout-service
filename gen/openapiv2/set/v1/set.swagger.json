@@ -1,0 +1,110 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "set/v1/set.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "SetService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/sets": {
+      "post": {
+        "operationId": "SetService_CreateSet",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateSetResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateSetRequest"
+            }
+          }
+        ],
+        "tags": [
+          "SetService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1CreateSetRequest": {
+      "type": "object",
+      "properties": {
+        "exercise": {
+          "type": "string"
+        },
+        "rep": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "weight": {
+          "type": "number",
+          "format": "double"
+        },
+        "trainedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1CreateSetResponse": {
+      "type": "object",
+      "properties": {
+        "setId": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
