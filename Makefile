@@ -12,6 +12,9 @@ proto-gen:
 MOCK_GEN=go run go.uber.org/mock/mockgen@v0.6.0
 
 mock-gen:
+	$(MOCK_GEN) -source=internal/domain/set/set.go -destination=mocks/domain/set/mock_set.go -package=mocks
+	$(MOCK_GEN) -source=internal/domain/set/repository.go -destination=mocks/domain/set/mock_repository.go -package=mocks
+	$(MOCK_GEN) -source=internal/application/set/usecase.go -destination=mocks/application/set/mock_usecase.go -package=mocks
 	$(MOCK_GEN) -source=internal/application/auth/service.go -destination=mocks/application/auth/mock_service.go -package=mocks
 	$(MOCK_GEN) -destination=mocks/external/auth/v1/mock_client.go -package=mocks github.com/qkitzero/auth-service/gen/go/auth/v1 AuthServiceClient
 
