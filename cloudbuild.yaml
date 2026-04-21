@@ -1,0 +1,97 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - us-central1-docker.pkg.dev/$PROJECT_ID/workout-service/workout-service:$COMMIT_SHA
+      - -f
+      - ./build/workout/Dockerfile
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - us-central1-docker.pkg.dev/$PROJECT_ID/workout-service/workout-service:$COMMIT_SHA
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        gcloud artifacts repositories set-cleanup-policies workout-service \
+          --project=$PROJECT_ID \
+          --location=us-central1 \
+          --policy=cleanup-policy.json \
+          --no-dry-run
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        gcloud secrets versions access latest --secret=workout-service-env-file > .env
+        gcloud run deploy workout-service \
+          --image=us-central1-docker.pkg.dev/$PROJECT_ID/workout-service/workout-service:$COMMIT_SHA \
+          --region=us-central1 \
+          --platform=managed \
+          --min-instances=0 \
+          --max-instances=1 \
+          --memory=128Mi \
+          --cpu=1 \
+          --concurrency=80 \
+          --timeout=30 \
+          --ingress=all \
+          --allow-unauthenticated \
+          --set-env-vars=$$(cat .env | xargs | sed 's/ /,/g')
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - us-central1-docker.pkg.dev/$PROJECT_ID/workout-service-gateway/workout-service-gateway:$COMMIT_SHA
+      - -f
+      - ./build/gateway/Dockerfile
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - us-central1-docker.pkg.dev/$PROJECT_ID/workout-service-gateway/workout-service-gateway:$COMMIT_SHA
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        gcloud artifacts repositories set-cleanup-policies workout-service-gateway \
+          --project=$PROJECT_ID \
+          --location=us-central1 \
+          --policy=cleanup-policy.json \
+          --no-dry-run
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        gcloud secrets versions access latest --secret=workout-service-env-file > .env
+        gcloud run deploy workout-service-gateway \
+          --image=us-central1-docker.pkg.dev/$PROJECT_ID/workout-service-gateway/workout-service-gateway:$COMMIT_SHA \
+          --region=us-central1 \
+          --platform=managed \
+          --min-instances=0 \
+          --max-instances=1 \
+          --memory=128Mi \
+          --cpu=1 \
+          --concurrency=80 \
+          --timeout=30 \
+          --ingress=all \
+          --allow-unauthenticated \
+          --set-env-vars=$$(cat .env | xargs | sed 's/ /,/g')
+
+images:
+  - us-central1-docker.pkg.dev/$PROJECT_ID/workout-service/workout-service:$COMMIT_SHA
+  - us-central1-docker.pkg.dev/$PROJECT_ID/workout-service-gateway/workout-service-gateway:$COMMIT_SHA
+
+options:
+  logging: CLOUD_LOGGING_ONLY

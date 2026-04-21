@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package set.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/qkitzero/workout-service/gen/go/set/v1";
+
+service SetService {
+  rpc CreateSet(CreateSetRequest) returns (CreateSetResponse) {
+    option (google.api.http) = {
+      post: "/v1/sets"
+      body: "*"
+    };
+  }
+}
+
+message CreateSetRequest {
+  string exercise = 1;
+  int32 rep = 2;
+  double weight = 3;
+  google.protobuf.Timestamp trained_at = 4;
+}
+
+message CreateSetResponse {
+  string set_id = 1;
+}
