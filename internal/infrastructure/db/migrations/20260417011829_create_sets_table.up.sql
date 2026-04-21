@@ -1,0 +1,9 @@
+CREATE TABLE sets (
+  id VARCHAR(36) PRIMARY KEY,
+  user_id VARCHAR(255) NOT NULL,
+  exercise VARCHAR(255) NOT NULL,
+  rep INT NOT NULL,
+  weight DOUBLE PRECISION NOT NULL,
+  trained_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP NOT NULL
+);
