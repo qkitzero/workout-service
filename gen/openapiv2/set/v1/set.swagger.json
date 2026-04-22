@@ -17,6 +17,26 @@
   ],
   "paths": {
     "/v1/sets": {
+      "get": {
+        "operationId": "SetService_ListSets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSetsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "SetService"
+        ]
+      },
       "post": {
         "operationId": "SetService_CreateSet",
         "responses": {
@@ -103,6 +123,45 @@
       "properties": {
         "setId": {
           "type": "string"
+        }
+      }
+    },
+    "v1ListSetsResponse": {
+      "type": "object",
+      "properties": {
+        "sets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Set"
+          }
+        }
+      }
+    },
+    "v1Set": {
+      "type": "object",
+      "properties": {
+        "setId": {
+          "type": "string"
+        },
+        "exercise": {
+          "type": "string"
+        },
+        "rep": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "weight": {
+          "type": "number",
+          "format": "double"
+        },
+        "trainedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     }

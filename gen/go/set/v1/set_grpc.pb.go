@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	SetService_CreateSet_FullMethodName = "/set.v1.SetService/CreateSet"
+	SetService_ListSets_FullMethodName  = "/set.v1.SetService/ListSets"
 )
 
 // SetServiceClient is the client API for SetService service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SetServiceClient interface {
 	CreateSet(ctx context.Context, in *CreateSetRequest, opts ...grpc.CallOption) (*CreateSetResponse, error)
+	ListSets(ctx context.Context, in *ListSetsRequest, opts ...grpc.CallOption) (*ListSetsResponse, error)
 }
 
 type setServiceClient struct {
@@ -47,11 +49,22 @@ func (c *setServiceClient) CreateSet(ctx context.Context, in *CreateSetRequest, 
 	return out, nil
 }
 
+func (c *setServiceClient) ListSets(ctx context.Context, in *ListSetsRequest, opts ...grpc.CallOption) (*ListSetsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSetsResponse)
+	err := c.cc.Invoke(ctx, SetService_ListSets_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SetServiceServer is the server API for SetService service.
 // All implementations must embed UnimplementedSetServiceServer
 // for forward compatibility.
 type SetServiceServer interface {
 	CreateSet(context.Context, *CreateSetRequest) (*CreateSetResponse, error)
+	ListSets(context.Context, *ListSetsRequest) (*ListSetsResponse, error)
 	mustEmbedUnimplementedSetServiceServer()
 }
 
@@ -64,6 +77,9 @@ type UnimplementedSetServiceServer struct{}
 
 func (UnimplementedSetServiceServer) CreateSet(context.Context, *CreateSetRequest) (*CreateSetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateSet not implemented")
+}
+func (UnimplementedSetServiceServer) ListSets(context.Context, *ListSetsRequest) (*ListSetsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListSets not implemented")
 }
 func (UnimplementedSetServiceServer) mustEmbedUnimplementedSetServiceServer() {}
 func (UnimplementedSetServiceServer) testEmbeddedByValue()                    {}
@@ -104,6 +120,24 @@ func _SetService_CreateSet_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SetService_ListSets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSetsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SetServiceServer).ListSets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SetService_ListSets_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SetServiceServer).ListSets(ctx, req.(*ListSetsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SetService_ServiceDesc is the grpc.ServiceDesc for SetService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +148,10 @@ var SetService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateSet",
 			Handler:    _SetService_CreateSet_Handler,
+		},
+		{
+			MethodName: "ListSets",
+			Handler:    _SetService_ListSets_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

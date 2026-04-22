@@ -14,6 +14,18 @@ service SetService {
       body: "*"
     };
   }
+  rpc ListSets(ListSetsRequest) returns (ListSetsResponse) {
+    option (google.api.http) = {get: "/v1/sets"};
+  }
+}
+
+message Set {
+  string set_id = 1;
+  string exercise = 2;
+  int32 rep = 3;
+  double weight = 4;
+  google.protobuf.Timestamp trained_at = 5;
+  google.protobuf.Timestamp created_at = 6;
 }
 
 message CreateSetRequest {
@@ -25,4 +37,10 @@ message CreateSetRequest {
 
 message CreateSetResponse {
   string set_id = 1;
+}
+
+message ListSetsRequest {}
+
+message ListSetsResponse {
+  repeated Set sets = 1;
 }
