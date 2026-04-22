@@ -19,6 +19,16 @@
 ```mermaid
 classDiagram
     direction LR
+
+    class Set {
+        id
+        userID
+        exercise
+        rep
+        weight
+        trainedAt
+        createdAt
+    }
 ```
 
 ```mermaid

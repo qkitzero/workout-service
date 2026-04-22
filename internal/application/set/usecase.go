@@ -11,6 +11,7 @@ import (
 
 type SetUsecase interface {
 	CreateSet(ctx context.Context, exercise string, rep int32, weight float64, trainedAt time.Time) (set.Set, error)
+	ListSets(ctx context.Context) ([]set.Set, error)
 }
 
 type setUsecase struct {
@@ -55,4 +56,23 @@ func (u *setUsecase) CreateSet(ctx context.Context, exercise string, rep int32, 
 	}
 
 	return newSet, nil
+}
+
+func (u *setUsecase) ListSets(ctx context.Context) ([]set.Set, error) {
+	userID, err := u.authService.VerifyToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	newUserID, err := user.NewUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	sets, err := u.setRepo.FindByUserID(newUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return sets, nil
 }

@@ -4,6 +4,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/qkitzero/workout-service/internal/domain/set"
+	"github.com/qkitzero/workout-service/internal/domain/user"
 )
 
 type setRepository struct {
@@ -32,4 +33,18 @@ func (r *setRepository) Create(s set.Set) error {
 
 		return nil
 	})
+}
+
+func (r *setRepository) FindByUserID(userID user.UserID) ([]set.Set, error) {
+	var setModels []SetModel
+	if err := r.db.Where("user_id = ?", userID).Find(&setModels).Error; err != nil {
+		return nil, err
+	}
+
+	sets := make([]set.Set, len(setModels))
+	for i, m := range setModels {
+		sets[i] = set.NewSet(m.ID, m.UserID, m.Exercise, m.Rep, m.Weight, m.TrainedAt, m.CreatedAt)
+	}
+
+	return sets, nil
 }

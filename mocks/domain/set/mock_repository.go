@@ -13,6 +13,7 @@ import (
 	reflect "reflect"
 
 	set "github.com/qkitzero/workout-service/internal/domain/set"
+	user "github.com/qkitzero/workout-service/internal/domain/user"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -52,4 +53,19 @@ func (m *MockSetRepository) Create(arg0 set.Set) error {
 func (mr *MockSetRepositoryMockRecorder) Create(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockSetRepository)(nil).Create), arg0)
+}
+
+// FindByUserID mocks base method.
+func (m *MockSetRepository) FindByUserID(userID user.UserID) ([]set.Set, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindByUserID", userID)
+	ret0, _ := ret[0].([]set.Set)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindByUserID indicates an expected call of FindByUserID.
+func (mr *MockSetRepositoryMockRecorder) FindByUserID(userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByUserID", reflect.TypeOf((*MockSetRepository)(nil).FindByUserID), userID)
 }
