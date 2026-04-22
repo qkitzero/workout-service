@@ -97,3 +97,79 @@ func TestCreate(t *testing.T) {
 		})
 	}
 }
+
+func TestFindByUserID(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		success bool
+		userID  user.UserID
+		setup   func(mock sqlmock.Sqlmock, userID user.UserID)
+	}{
+		{
+			name:    "success find sets by user id",
+			success: true,
+			userID:  user.UserID("fe8c2263-bbac-4bb9-a41d-b04f5afc4425"),
+			setup: func(mock sqlmock.Sqlmock, userID user.UserID) {
+				rows := sqlmock.NewRows([]string{"id", "user_id", "exercise", "rep", "weight", "trained_at", "created_at"}).
+					AddRow(uuid.New().String(), userID, "bench press", 10, 60.0, time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC), time.Now())
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sets" WHERE user_id = $1`)).
+					WithArgs(userID).
+					WillReturnRows(rows)
+			},
+		},
+		{
+			name:    "success find sets empty result",
+			success: true,
+			userID:  user.UserID("fe8c2263-bbac-4bb9-a41d-b04f5afc4425"),
+			setup: func(mock sqlmock.Sqlmock, userID user.UserID) {
+				rows := sqlmock.NewRows([]string{"id", "user_id", "exercise", "rep", "weight", "trained_at", "created_at"})
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sets" WHERE user_id = $1`)).
+					WithArgs(userID).
+					WillReturnRows(rows)
+			},
+		},
+		{
+			name:    "failure find sets error",
+			success: false,
+			userID:  user.UserID("fe8c2263-bbac-4bb9-a41d-b04f5afc4425"),
+			setup: func(mock sqlmock.Sqlmock, userID user.UserID) {
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sets" WHERE user_id = $1`)).
+					WithArgs(userID).
+					WillReturnError(errors.New("find sets error"))
+			},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			sqlDB, mock, err := sqlmock.New()
+			if err != nil {
+				t.Errorf("failed to new sqlmock: %s", err)
+			}
+
+			gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: sqlDB}), &gorm.Config{})
+			if err != nil {
+				t.Errorf("failed to open gorm: %s", err)
+			}
+
+			tt.setup(mock, tt.userID)
+
+			repo := NewSetRepository(gormDB)
+
+			_, err = repo.FindByUserID(tt.userID)
+			if tt.success && err != nil {
+				t.Errorf("expected no error, but got %v", err)
+			}
+			if !tt.success && err == nil {
+				t.Errorf("expected error, but got nil")
+			}
+
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("there were unfulfilled expectations: %s", err)
+			}
+		})
+	}
+}
