@@ -43,7 +43,7 @@ func (h *SetHandler) ListSets(ctx context.Context, req *setv1.ListSetsRequest) (
 		return nil, err
 	}
 
-	var responses []*setv1.Set
+	responses := make([]*setv1.Set, 0, len(sets))
 	for _, s := range sets {
 		responses = append(responses, &setv1.Set{
 			SetId:     s.ID().String(),
