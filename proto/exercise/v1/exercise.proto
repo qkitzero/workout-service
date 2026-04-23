@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package exercise.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/qkitzero/workout-service/gen/go/exercise/v1";
+
+service ExerciseService {
+  rpc ListExercises(ListExercisesRequest) returns (ListExercisesResponse) {
+    option (google.api.http) = {get: "/v1/exercises"};
+  }
+}
+
+message Exercise {
+  string exercise_id = 1;
+  string code = 2;
+  string name = 3;
+  string category = 4;
+}
+
+message ListExercisesRequest {
+  string lang = 1;
+}
+
+message ListExercisesResponse {
+  repeated Exercise exercises = 1;
+}
