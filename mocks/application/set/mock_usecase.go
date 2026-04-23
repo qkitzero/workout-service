@@ -43,18 +43,18 @@ func (m *MockSetUsecase) EXPECT() *MockSetUsecaseMockRecorder {
 }
 
 // CreateSet mocks base method.
-func (m *MockSetUsecase) CreateSet(ctx context.Context, exercise string, rep int32, weight float64, trainedAt time.Time) (set.Set, error) {
+func (m *MockSetUsecase) CreateSet(ctx context.Context, exerciseID string, rep int32, weight float64, trainedAt time.Time) (set.Set, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateSet", ctx, exercise, rep, weight, trainedAt)
+	ret := m.ctrl.Call(m, "CreateSet", ctx, exerciseID, rep, weight, trainedAt)
 	ret0, _ := ret[0].(set.Set)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateSet indicates an expected call of CreateSet.
-func (mr *MockSetUsecaseMockRecorder) CreateSet(ctx, exercise, rep, weight, trainedAt any) *gomock.Call {
+func (mr *MockSetUsecaseMockRecorder) CreateSet(ctx, exerciseID, rep, weight, trainedAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSet", reflect.TypeOf((*MockSetUsecase)(nil).CreateSet), ctx, exercise, rep, weight, trainedAt)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSet", reflect.TypeOf((*MockSetUsecase)(nil).CreateSet), ctx, exerciseID, rep, weight, trainedAt)
 }
 
 // ListSets mocks base method.

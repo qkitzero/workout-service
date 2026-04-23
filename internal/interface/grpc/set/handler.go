@@ -23,7 +23,7 @@ func NewSetHandler(setUsecase appset.SetUsecase) *SetHandler {
 func (h *SetHandler) CreateSet(ctx context.Context, req *setv1.CreateSetRequest) (*setv1.CreateSetResponse, error) {
 	s, err := h.setUsecase.CreateSet(
 		ctx,
-		req.GetExercise(),
+		req.GetExerciseId(),
 		req.GetRep(),
 		req.GetWeight(),
 		req.GetTrainedAt().AsTime(),
@@ -46,12 +46,12 @@ func (h *SetHandler) ListSets(ctx context.Context, req *setv1.ListSetsRequest) (
 	responses := make([]*setv1.Set, 0, len(sets))
 	for _, s := range sets {
 		responses = append(responses, &setv1.Set{
-			SetId:     s.ID().String(),
-			Exercise:  s.Exercise().String(),
-			Rep:       s.Rep().Int32(),
-			Weight:    s.Weight().Float64(),
-			TrainedAt: timestamppb.New(s.TrainedAt()),
-			CreatedAt: timestamppb.New(s.CreatedAt()),
+			SetId:      s.ID().String(),
+			ExerciseId: s.ExerciseID().String(),
+			Rep:        s.Rep().Int32(),
+			Weight:     s.Weight().Float64(),
+			TrainedAt:  timestamppb.New(s.TrainedAt()),
+			CreatedAt:  timestamppb.New(s.CreatedAt()),
 		})
 	}
 

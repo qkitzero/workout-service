@@ -5,25 +5,27 @@ import (
 	"time"
 
 	"github.com/qkitzero/workout-service/internal/application/auth"
+	"github.com/qkitzero/workout-service/internal/domain/exercise"
 	"github.com/qkitzero/workout-service/internal/domain/set"
 	"github.com/qkitzero/workout-service/internal/domain/user"
 )
 
 type SetUsecase interface {
-	CreateSet(ctx context.Context, exercise string, rep int32, weight float64, trainedAt time.Time) (set.Set, error)
+	CreateSet(ctx context.Context, exerciseID string, rep int32, weight float64, trainedAt time.Time) (set.Set, error)
 	ListSets(ctx context.Context) ([]set.Set, error)
 }
 
 type setUsecase struct {
-	authService auth.AuthService
-	setRepo     set.SetRepository
+	authService  auth.AuthService
+	setRepo      set.SetRepository
+	exerciseRepo exercise.ExerciseRepository
 }
 
-func NewSetUsecase(authService auth.AuthService, setRepo set.SetRepository) SetUsecase {
-	return &setUsecase{authService: authService, setRepo: setRepo}
+func NewSetUsecase(authService auth.AuthService, setRepo set.SetRepository, exerciseRepo exercise.ExerciseRepository) SetUsecase {
+	return &setUsecase{authService: authService, setRepo: setRepo, exerciseRepo: exerciseRepo}
 }
 
-func (u *setUsecase) CreateSet(ctx context.Context, exercise string, rep int32, weight float64, trainedAt time.Time) (set.Set, error) {
+func (u *setUsecase) CreateSet(ctx context.Context, exerciseID string, rep int32, weight float64, trainedAt time.Time) (set.Set, error) {
 	userID, err := u.authService.VerifyToken(ctx)
 	if err != nil {
 		return nil, err
@@ -34,9 +36,17 @@ func (u *setUsecase) CreateSet(ctx context.Context, exercise string, rep int32, 
 		return nil, err
 	}
 
-	newExercise, err := set.NewExercise(exercise)
+	newExerciseID, err := exercise.NewExerciseIDFromString(exerciseID)
 	if err != nil {
 		return nil, err
+	}
+
+	exists, err := u.exerciseRepo.Exists(newExerciseID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, exercise.ErrExerciseNotFound
 	}
 
 	newRep, err := set.NewRep(rep)
@@ -49,7 +59,7 @@ func (u *setUsecase) CreateSet(ctx context.Context, exercise string, rep int32, 
 		return nil, err
 	}
 
-	newSet := set.NewSet(set.NewSetID(), newUserID, newExercise, newRep, newWeight, trainedAt, time.Now())
+	newSet := set.NewSet(set.NewSetID(), newUserID, newExerciseID, newRep, newWeight, trainedAt, time.Now())
 
 	if err := u.setRepo.Create(newSet); err != nil {
 		return nil, err
