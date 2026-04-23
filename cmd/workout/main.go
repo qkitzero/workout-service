@@ -12,11 +12,15 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	authv1 "github.com/qkitzero/auth-service/gen/go/auth/v1"
+	exercisev1 "github.com/qkitzero/workout-service/gen/go/exercise/v1"
 	setv1 "github.com/qkitzero/workout-service/gen/go/set/v1"
+	appexercise "github.com/qkitzero/workout-service/internal/application/exercise"
 	appset "github.com/qkitzero/workout-service/internal/application/set"
 	apiauth "github.com/qkitzero/workout-service/internal/infrastructure/api/auth"
 	"github.com/qkitzero/workout-service/internal/infrastructure/db"
+	infraexercise "github.com/qkitzero/workout-service/internal/infrastructure/exercise"
 	infraset "github.com/qkitzero/workout-service/internal/infrastructure/set"
+	grpcexercise "github.com/qkitzero/workout-service/internal/interface/grpc/exercise"
 	grpcset "github.com/qkitzero/workout-service/internal/interface/grpc/set"
 	"github.com/qkitzero/workout-service/util"
 )
@@ -59,17 +63,22 @@ func main() {
 
 	authServiceClient := authv1.NewAuthServiceClient(conn)
 	setRepository := infraset.NewSetRepository(db)
+	exerciseRepository := infraexercise.NewExerciseRepository(db)
 
 	authService := apiauth.NewAuthService(authServiceClient)
-	setUsecase := appset.NewSetUsecase(authService, setRepository)
+	setUsecase := appset.NewSetUsecase(authService, setRepository, exerciseRepository)
+	exerciseUsecase := appexercise.NewExerciseUsecase(exerciseRepository)
 
 	healthServer := health.NewServer()
 	setHandler := grpcset.NewSetHandler(setUsecase)
+	exerciseHandler := grpcexercise.NewExerciseHandler(exerciseUsecase)
 
 	grpc_health_v1.RegisterHealthServer(server, healthServer)
 	setv1.RegisterSetServiceServer(server, setHandler)
+	exercisev1.RegisterExerciseServiceServer(server, exerciseHandler)
 
 	healthServer.SetServingStatus("set", grpc_health_v1.HealthCheckResponse_SERVING)
+	healthServer.SetServingStatus("exercise", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	if util.GetEnv("ENV", "development") == "development" {
 		reflection.Register(server)

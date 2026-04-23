@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health/grpc_health_v1"
 
+	exercisev1 "github.com/qkitzero/workout-service/gen/go/exercise/v1"
 	setv1 "github.com/qkitzero/workout-service/gen/go/set/v1"
 	"github.com/qkitzero/workout-service/util"
 )
@@ -43,6 +44,10 @@ func main() {
 	)
 
 	if err := setv1.RegisterSetServiceHandlerFromEndpoint(ctx, mux, endpoint, []grpc.DialOption{opts}); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := exercisev1.RegisterExerciseServiceHandlerFromEndpoint(ctx, mux, endpoint, []grpc.DialOption{opts}); err != nil {
 		log.Fatal(err)
 	}
 
