@@ -31,9 +31,6 @@ func (e exercise) Name(lang Language) Name {
 			return t.Name()
 		}
 	}
-	if len(e.translations) > 0 {
-		return e.translations[0].Name()
-	}
 	return Name(e.code.String())
 }
 

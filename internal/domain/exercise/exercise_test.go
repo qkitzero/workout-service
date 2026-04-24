@@ -78,10 +78,10 @@ func TestExerciseName(t *testing.T) {
 			"ベンチプレス",
 		},
 		{
-			"fallback to first when ja missing",
+			"fallback to code when ja missing",
 			[]Translation{NewTranslation(Language("en"), enName)},
 			Language("de"),
-			"Bench Press",
+			"bench_press",
 		},
 		{
 			"fallback to code when no translations",
