@@ -57,8 +57,8 @@ func TestCreateSet(t *testing.T) {
 			mockSetRepository := mocks.NewMockSetRepository(ctrl)
 			mockExerciseRepository := mocksexercise.NewMockExerciseRepository(ctrl)
 			mockAuthService.EXPECT().VerifyToken(tt.ctx).Return(tt.userID, tt.verifyTokenErr).AnyTimes()
-			mockExerciseRepository.EXPECT().Exists(gomock.Any()).Return(tt.existsResult, tt.existsErr).AnyTimes()
-			mockSetRepository.EXPECT().Create(gomock.Any()).Return(tt.createErr).AnyTimes()
+			mockExerciseRepository.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(tt.existsResult, tt.existsErr).AnyTimes()
+			mockSetRepository.EXPECT().Create(gomock.Any(), gomock.Any()).Return(tt.createErr).AnyTimes()
 
 			setUsecase := NewSetUsecase(mockAuthService, mockSetRepository, mockExerciseRepository)
 
@@ -100,7 +100,7 @@ func TestListSets(t *testing.T) {
 			mockSetRepository := mocks.NewMockSetRepository(ctrl)
 			mockExerciseRepository := mocksexercise.NewMockExerciseRepository(ctrl)
 			mockAuthService.EXPECT().VerifyToken(tt.ctx).Return(tt.userID, tt.verifyTokenErr).AnyTimes()
-			mockSetRepository.EXPECT().FindByUserID(gomock.Any()).Return([]set.Set{}, tt.findByUserIDErr).AnyTimes()
+			mockSetRepository.EXPECT().FindByUserID(gomock.Any(), gomock.Any()).Return([]set.Set{}, tt.findByUserIDErr).AnyTimes()
 
 			setUsecase := NewSetUsecase(mockAuthService, mockSetRepository, mockExerciseRepository)
 

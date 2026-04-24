@@ -35,7 +35,7 @@ func (u *exerciseUsecase) ListExercises(ctx context.Context, lang string) ([]Lis
 		language = parsed
 	}
 
-	exercises, err := u.exerciseRepo.FindAll()
+	exercises, err := u.exerciseRepo.FindAll(ctx)
 	if err != nil {
 		return nil, err
 	}

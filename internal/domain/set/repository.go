@@ -1,8 +1,12 @@
 package set
 
-import "github.com/qkitzero/workout-service/internal/domain/user"
+import (
+	"context"
+
+	"github.com/qkitzero/workout-service/internal/domain/user"
+)
 
 type SetRepository interface {
-	Create(set Set) error
-	FindByUserID(userID user.UserID) ([]Set, error)
+	Create(ctx context.Context, set Set) error
+	FindByUserID(ctx context.Context, userID user.UserID) ([]Set, error)
 }

@@ -1,7 +1,9 @@
 package exercise
 
+import "context"
+
 type ExerciseRepository interface {
-	FindAll() ([]Exercise, error)
-	FindByID(id ExerciseID) (Exercise, error)
-	Exists(id ExerciseID) (bool, error)
+	FindAll(ctx context.Context) ([]Exercise, error)
+	FindByID(ctx context.Context, id ExerciseID) (Exercise, error)
+	Exists(ctx context.Context, id ExerciseID) (bool, error)
 }

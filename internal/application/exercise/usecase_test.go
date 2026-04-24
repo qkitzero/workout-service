@@ -53,7 +53,7 @@ func TestListExercises(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockExerciseRepository := mocksexercise.NewMockExerciseRepository(ctrl)
-			mockExerciseRepository.EXPECT().FindAll().Return(tt.findAllResp, tt.findAllErr).AnyTimes()
+			mockExerciseRepository.EXPECT().FindAll(gomock.Any()).Return(tt.findAllResp, tt.findAllErr).AnyTimes()
 
 			u := NewExerciseUsecase(mockExerciseRepository)
 

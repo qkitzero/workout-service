@@ -1,6 +1,8 @@
 package set
 
 import (
+	"context"
+
 	"gorm.io/gorm"
 
 	"github.com/qkitzero/workout-service/internal/domain/set"
@@ -15,8 +17,8 @@ func NewSetRepository(db *gorm.DB) set.SetRepository {
 	return &setRepository{db: db}
 }
 
-func (r *setRepository) Create(s set.Set) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
+func (r *setRepository) Create(ctx context.Context, s set.Set) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		setModel := SetModel{
 			ID:         s.ID(),
 			UserID:     s.UserID(),
@@ -35,9 +37,9 @@ func (r *setRepository) Create(s set.Set) error {
 	})
 }
 
-func (r *setRepository) FindByUserID(userID user.UserID) ([]set.Set, error) {
+func (r *setRepository) FindByUserID(ctx context.Context, userID user.UserID) ([]set.Set, error) {
 	var setModels []SetModel
-	if err := r.db.Where("user_id = ?", userID).Find(&setModels).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("user_id = ?", userID).Find(&setModels).Error; err != nil {
 		return nil, err
 	}
 

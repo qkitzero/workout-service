@@ -41,7 +41,7 @@ func (u *setUsecase) CreateSet(ctx context.Context, exerciseID string, rep int32
 		return nil, err
 	}
 
-	exists, err := u.exerciseRepo.Exists(newExerciseID)
+	exists, err := u.exerciseRepo.Exists(ctx, newExerciseID)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (u *setUsecase) CreateSet(ctx context.Context, exerciseID string, rep int32
 
 	newSet := set.NewSet(set.NewSetID(), newUserID, newExerciseID, newRep, newWeight, trainedAt, time.Now())
 
-	if err := u.setRepo.Create(newSet); err != nil {
+	if err := u.setRepo.Create(ctx, newSet); err != nil {
 		return nil, err
 	}
 
@@ -79,7 +79,7 @@ func (u *setUsecase) ListSets(ctx context.Context) ([]set.Set, error) {
 		return nil, err
 	}
 
-	sets, err := u.setRepo.FindByUserID(newUserID)
+	sets, err := u.setRepo.FindByUserID(ctx, newUserID)
 	if err != nil {
 		return nil, err
 	}

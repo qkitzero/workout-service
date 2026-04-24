@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	exercise "github.com/qkitzero/workout-service/internal/domain/exercise"
@@ -41,46 +42,46 @@ func (m *MockExerciseRepository) EXPECT() *MockExerciseRepositoryMockRecorder {
 }
 
 // Exists mocks base method.
-func (m *MockExerciseRepository) Exists(id exercise.ExerciseID) (bool, error) {
+func (m *MockExerciseRepository) Exists(ctx context.Context, id exercise.ExerciseID) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Exists", id)
+	ret := m.ctrl.Call(m, "Exists", ctx, id)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Exists indicates an expected call of Exists.
-func (mr *MockExerciseRepositoryMockRecorder) Exists(id any) *gomock.Call {
+func (mr *MockExerciseRepositoryMockRecorder) Exists(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockExerciseRepository)(nil).Exists), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockExerciseRepository)(nil).Exists), ctx, id)
 }
 
 // FindAll mocks base method.
-func (m *MockExerciseRepository) FindAll() ([]exercise.Exercise, error) {
+func (m *MockExerciseRepository) FindAll(ctx context.Context) ([]exercise.Exercise, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAll")
+	ret := m.ctrl.Call(m, "FindAll", ctx)
 	ret0, _ := ret[0].([]exercise.Exercise)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FindAll indicates an expected call of FindAll.
-func (mr *MockExerciseRepositoryMockRecorder) FindAll() *gomock.Call {
+func (mr *MockExerciseRepositoryMockRecorder) FindAll(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockExerciseRepository)(nil).FindAll))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockExerciseRepository)(nil).FindAll), ctx)
 }
 
 // FindByID mocks base method.
-func (m *MockExerciseRepository) FindByID(id exercise.ExerciseID) (exercise.Exercise, error) {
+func (m *MockExerciseRepository) FindByID(ctx context.Context, id exercise.ExerciseID) (exercise.Exercise, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByID", id)
+	ret := m.ctrl.Call(m, "FindByID", ctx, id)
 	ret0, _ := ret[0].(exercise.Exercise)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FindByID indicates an expected call of FindByID.
-func (mr *MockExerciseRepositoryMockRecorder) FindByID(id any) *gomock.Call {
+func (mr *MockExerciseRepositoryMockRecorder) FindByID(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByID", reflect.TypeOf((*MockExerciseRepository)(nil).FindByID), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByID", reflect.TypeOf((*MockExerciseRepository)(nil).FindByID), ctx, id)
 }

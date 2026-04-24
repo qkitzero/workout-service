@@ -1,6 +1,7 @@
 package exercise
 
 import (
+	"context"
 	"errors"
 	"regexp"
 	"testing"
@@ -61,7 +62,7 @@ func TestFindAll(t *testing.T) {
 
 			repo := NewExerciseRepository(gormDB)
 
-			_, err = repo.FindAll()
+			_, err = repo.FindAll(context.Background())
 			if tt.success && err != nil {
 				t.Errorf("expected no error, but got %v", err)
 			}
@@ -144,7 +145,7 @@ func TestFindByID(t *testing.T) {
 
 			repo := NewExerciseRepository(gormDB)
 
-			_, err = repo.FindByID(id)
+			_, err = repo.FindByID(context.Background(), id)
 			if tt.success && err != nil {
 				t.Errorf("expected no error, but got %v", err)
 			}
@@ -226,7 +227,7 @@ func TestExists(t *testing.T) {
 
 			repo := NewExerciseRepository(gormDB)
 
-			got, err := repo.Exists(id)
+			got, err := repo.Exists(context.Background(), id)
 			if tt.success && err != nil {
 				t.Errorf("expected no error, but got %v", err)
 			}
