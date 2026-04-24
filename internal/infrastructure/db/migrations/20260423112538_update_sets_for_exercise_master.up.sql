@@ -1,0 +1,6 @@
+DELETE FROM sets;
+
+ALTER TABLE sets DROP COLUMN exercise;
+
+ALTER TABLE sets
+  ADD COLUMN exercise_id VARCHAR(36) NOT NULL REFERENCES exercises(id);

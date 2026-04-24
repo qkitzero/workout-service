@@ -1,0 +1,6 @@
+DELETE FROM sets;
+
+ALTER TABLE sets DROP COLUMN exercise_id;
+
+ALTER TABLE sets
+  ADD COLUMN exercise VARCHAR(255) NOT NULL;

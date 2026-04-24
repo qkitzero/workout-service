@@ -13,6 +13,7 @@ import (
 	reflect "reflect"
 	time "time"
 
+	exercise "github.com/qkitzero/workout-service/internal/domain/exercise"
 	set "github.com/qkitzero/workout-service/internal/domain/set"
 	user "github.com/qkitzero/workout-service/internal/domain/user"
 	gomock "go.uber.org/mock/gomock"
@@ -56,18 +57,18 @@ func (mr *MockSetMockRecorder) CreatedAt() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatedAt", reflect.TypeOf((*MockSet)(nil).CreatedAt))
 }
 
-// Exercise mocks base method.
-func (m *MockSet) Exercise() set.Exercise {
+// ExerciseID mocks base method.
+func (m *MockSet) ExerciseID() exercise.ExerciseID {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Exercise")
-	ret0, _ := ret[0].(set.Exercise)
+	ret := m.ctrl.Call(m, "ExerciseID")
+	ret0, _ := ret[0].(exercise.ExerciseID)
 	return ret0
 }
 
-// Exercise indicates an expected call of Exercise.
-func (mr *MockSetMockRecorder) Exercise() *gomock.Call {
+// ExerciseID indicates an expected call of ExerciseID.
+func (mr *MockSetMockRecorder) ExerciseID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exercise", reflect.TypeOf((*MockSet)(nil).Exercise))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExerciseID", reflect.TypeOf((*MockSet)(nil).ExerciseID))
 }
 
 // ID mocks base method.

@@ -1,6 +1,7 @@
 package set
 
 import (
+	"context"
 	"errors"
 	"regexp"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	"github.com/qkitzero/workout-service/internal/domain/exercise"
 	"github.com/qkitzero/workout-service/internal/domain/set"
 	"github.com/qkitzero/workout-service/internal/domain/user"
 	mocksset "github.com/qkitzero/workout-service/mocks/domain/set"
@@ -31,8 +33,8 @@ func TestCreate(t *testing.T) {
 			setup: func(mock sqlmock.Sqlmock, s set.Set) {
 				mock.ExpectBegin()
 
-				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO "sets" ("id","user_id","exercise","rep","weight","trained_at","created_at") VALUES ($1,$2,$3,$4,$5,$6,$7)`)).
-					WithArgs(s.ID(), s.UserID(), s.Exercise(), s.Rep(), s.Weight(), testutil.AnyTime{}, testutil.AnyTime{}).
+				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO "sets" ("id","user_id","exercise_id","rep","weight","trained_at","created_at") VALUES ($1,$2,$3,$4,$5,$6,$7)`)).
+					WithArgs(s.ID(), s.UserID(), s.ExerciseID(), s.Rep(), s.Weight(), testutil.AnyTime{}, testutil.AnyTime{}).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 
 				mock.ExpectCommit()
@@ -44,8 +46,8 @@ func TestCreate(t *testing.T) {
 			setup: func(mock sqlmock.Sqlmock, s set.Set) {
 				mock.ExpectBegin()
 
-				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO "sets" ("id","user_id","exercise","rep","weight","trained_at","created_at") VALUES ($1,$2,$3,$4,$5,$6,$7)`)).
-					WithArgs(s.ID(), s.UserID(), s.Exercise(), s.Rep(), s.Weight(), testutil.AnyTime{}, testutil.AnyTime{}).
+				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO "sets" ("id","user_id","exercise_id","rep","weight","trained_at","created_at") VALUES ($1,$2,$3,$4,$5,$6,$7)`)).
+					WithArgs(s.ID(), s.UserID(), s.ExerciseID(), s.Rep(), s.Weight(), testutil.AnyTime{}, testutil.AnyTime{}).
 					WillReturnError(errors.New("create set error"))
 
 				mock.ExpectRollback()
@@ -73,7 +75,7 @@ func TestCreate(t *testing.T) {
 			mockSet := mocksset.NewMockSet(ctrl)
 			mockSet.EXPECT().ID().Return(set.SetID{UUID: uuid.New()}).AnyTimes()
 			mockSet.EXPECT().UserID().Return(user.UserID("fe8c2263-bbac-4bb9-a41d-b04f5afc4425")).AnyTimes()
-			mockSet.EXPECT().Exercise().Return(set.Exercise("bench press")).AnyTimes()
+			mockSet.EXPECT().ExerciseID().Return(exercise.ExerciseID{UUID: uuid.New()}).AnyTimes()
 			mockSet.EXPECT().Rep().Return(set.Rep(10)).AnyTimes()
 			mockSet.EXPECT().Weight().Return(set.Weight(60.0)).AnyTimes()
 			mockSet.EXPECT().TrainedAt().Return(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)).AnyTimes()
@@ -83,7 +85,7 @@ func TestCreate(t *testing.T) {
 
 			repo := NewSetRepository(gormDB)
 
-			err = repo.Create(mockSet)
+			err = repo.Create(context.Background(), mockSet)
 			if tt.success && err != nil {
 				t.Errorf("expected no error, but got %v", err)
 			}
@@ -111,8 +113,8 @@ func TestFindByUserID(t *testing.T) {
 			success: true,
 			userID:  user.UserID("fe8c2263-bbac-4bb9-a41d-b04f5afc4425"),
 			setup: func(mock sqlmock.Sqlmock, userID user.UserID) {
-				rows := sqlmock.NewRows([]string{"id", "user_id", "exercise", "rep", "weight", "trained_at", "created_at"}).
-					AddRow(uuid.New().String(), userID, "bench press", 10, 60.0, time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC), time.Now())
+				rows := sqlmock.NewRows([]string{"id", "user_id", "exercise_id", "rep", "weight", "trained_at", "created_at"}).
+					AddRow(uuid.New().String(), userID, "f1f538e5-4a37-409c-be99-09ee7bfefc50", 10, 60.0, time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC), time.Now())
 				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sets" WHERE user_id = $1`)).
 					WithArgs(userID).
 					WillReturnRows(rows)
@@ -123,7 +125,7 @@ func TestFindByUserID(t *testing.T) {
 			success: true,
 			userID:  user.UserID("fe8c2263-bbac-4bb9-a41d-b04f5afc4425"),
 			setup: func(mock sqlmock.Sqlmock, userID user.UserID) {
-				rows := sqlmock.NewRows([]string{"id", "user_id", "exercise", "rep", "weight", "trained_at", "created_at"})
+				rows := sqlmock.NewRows([]string{"id", "user_id", "exercise_id", "rep", "weight", "trained_at", "created_at"})
 				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sets" WHERE user_id = $1`)).
 					WithArgs(userID).
 					WillReturnRows(rows)
@@ -159,7 +161,7 @@ func TestFindByUserID(t *testing.T) {
 
 			repo := NewSetRepository(gormDB)
 
-			_, err = repo.FindByUserID(tt.userID)
+			_, err = repo.FindByUserID(context.Background(), tt.userID)
 			if tt.success && err != nil {
 				t.Errorf("expected no error, but got %v", err)
 			}
