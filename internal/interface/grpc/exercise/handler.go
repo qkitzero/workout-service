@@ -26,11 +26,21 @@ func (h *ExerciseHandler) ListExercises(ctx context.Context, req *exercisev1.Lis
 
 	responses := make([]*exercisev1.Exercise, 0, len(exercises))
 	for _, e := range exercises {
+		domainMuscles := e.Muscles()
+		muscles := make([]*exercisev1.Muscle, 0, len(domainMuscles))
+		for _, m := range domainMuscles {
+			muscles = append(muscles, &exercisev1.Muscle{
+				MuscleId: m.ID().String(),
+				Code:     m.Code().String(),
+				Name:     m.Name().String(),
+			})
+		}
 		responses = append(responses, &exercisev1.Exercise{
-			ExerciseId: e.ID.String(),
-			Code:       e.Code.String(),
-			Name:       e.Name.String(),
-			Category:   e.Category.String(),
+			ExerciseId: e.ID().String(),
+			Code:       e.Code().String(),
+			Name:       e.Name().String(),
+			Category:   e.Category().String(),
+			Muscles:    muscles,
 		})
 	}
 

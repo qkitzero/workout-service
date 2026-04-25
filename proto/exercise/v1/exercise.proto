@@ -17,6 +17,13 @@ message Exercise {
   string code = 2;
   string name = 3;
   string category = 4;
+  repeated Muscle muscles = 5;
+}
+
+message Muscle {
+  string muscle_id = 1;
+  string code = 2;
+  string name = 3;
 }
 
 message ListExercisesRequest {

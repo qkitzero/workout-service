@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	exercise "github.com/qkitzero/workout-service/internal/domain/exercise"
+	i18n "github.com/qkitzero/workout-service/internal/domain/i18n"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -57,31 +58,31 @@ func (mr *MockExerciseRepositoryMockRecorder) Exists(ctx, id any) *gomock.Call {
 }
 
 // FindAll mocks base method.
-func (m *MockExerciseRepository) FindAll(ctx context.Context) ([]exercise.Exercise, error) {
+func (m *MockExerciseRepository) FindAll(ctx context.Context, lang i18n.Language) ([]exercise.Exercise, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAll", ctx)
+	ret := m.ctrl.Call(m, "FindAll", ctx, lang)
 	ret0, _ := ret[0].([]exercise.Exercise)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FindAll indicates an expected call of FindAll.
-func (mr *MockExerciseRepositoryMockRecorder) FindAll(ctx any) *gomock.Call {
+func (mr *MockExerciseRepositoryMockRecorder) FindAll(ctx, lang any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockExerciseRepository)(nil).FindAll), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockExerciseRepository)(nil).FindAll), ctx, lang)
 }
 
 // FindByID mocks base method.
-func (m *MockExerciseRepository) FindByID(ctx context.Context, id exercise.ExerciseID) (exercise.Exercise, error) {
+func (m *MockExerciseRepository) FindByID(ctx context.Context, id exercise.ExerciseID, lang i18n.Language) (exercise.Exercise, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByID", ctx, id)
+	ret := m.ctrl.Call(m, "FindByID", ctx, id, lang)
 	ret0, _ := ret[0].(exercise.Exercise)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FindByID indicates an expected call of FindByID.
-func (mr *MockExerciseRepositoryMockRecorder) FindByID(ctx, id any) *gomock.Call {
+func (mr *MockExerciseRepositoryMockRecorder) FindByID(ctx, id, lang any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByID", reflect.TypeOf((*MockExerciseRepository)(nil).FindByID), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByID", reflect.TypeOf((*MockExerciseRepository)(nil).FindByID), ctx, id, lang)
 }

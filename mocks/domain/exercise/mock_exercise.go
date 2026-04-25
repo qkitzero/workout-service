@@ -13,6 +13,7 @@ import (
 	reflect "reflect"
 
 	exercise "github.com/qkitzero/workout-service/internal/domain/exercise"
+	muscle "github.com/qkitzero/workout-service/internal/domain/muscle"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -82,30 +83,30 @@ func (mr *MockExerciseMockRecorder) ID() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockExercise)(nil).ID))
 }
 
-// Name mocks base method.
-func (m *MockExercise) Name(lang exercise.Language) exercise.Name {
+// Muscles mocks base method.
+func (m *MockExercise) Muscles() []muscle.Muscle {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Name", lang)
+	ret := m.ctrl.Call(m, "Muscles")
+	ret0, _ := ret[0].([]muscle.Muscle)
+	return ret0
+}
+
+// Muscles indicates an expected call of Muscles.
+func (mr *MockExerciseMockRecorder) Muscles() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Muscles", reflect.TypeOf((*MockExercise)(nil).Muscles))
+}
+
+// Name mocks base method.
+func (m *MockExercise) Name() exercise.Name {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Name")
 	ret0, _ := ret[0].(exercise.Name)
 	return ret0
 }
 
 // Name indicates an expected call of Name.
-func (mr *MockExerciseMockRecorder) Name(lang any) *gomock.Call {
+func (mr *MockExerciseMockRecorder) Name() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockExercise)(nil).Name), lang)
-}
-
-// Translations mocks base method.
-func (m *MockExercise) Translations() []exercise.Translation {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Translations")
-	ret0, _ := ret[0].([]exercise.Translation)
-	return ret0
-}
-
-// Translations indicates an expected call of Translations.
-func (mr *MockExerciseMockRecorder) Translations() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Translations", reflect.TypeOf((*MockExercise)(nil).Translations))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockExercise)(nil).Name))
 }

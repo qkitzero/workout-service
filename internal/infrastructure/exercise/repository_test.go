@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/qkitzero/workout-service/internal/domain/exercise"
+	"github.com/qkitzero/workout-service/internal/domain/i18n"
 )
 
 func TestFindAll(t *testing.T) {
@@ -24,14 +25,27 @@ func TestFindAll(t *testing.T) {
 			name:    "success find all exercises",
 			success: true,
 			setup: func(mock sqlmock.Sqlmock) {
+				mock.MatchExpectationsInOrder(false)
 				rows := sqlmock.NewRows([]string{"id", "code", "category", "created_at"}).
 					AddRow("f1f538e5-4a37-409c-be99-09ee7bfefc50", "bench_press", "compound", nil)
 				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "exercises"`)).
 					WillReturnRows(rows)
 				transRows := sqlmock.NewRows([]string{"exercise_id", "lang", "name"}).
 					AddRow("f1f538e5-4a37-409c-be99-09ee7bfefc50", "ja", "ベンチプレス")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "exercise_translations" WHERE "exercise_translations"."exercise_id" = $1`)).
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "exercise_translations"`)).
 					WillReturnRows(transRows)
+				joinRows := sqlmock.NewRows([]string{"exercise_id", "muscle_id"}).
+					AddRow("f1f538e5-4a37-409c-be99-09ee7bfefc50", "4b5a784a-3333-4721-a071-2e3fbd570c7f")
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "exercise_muscle"`)).
+					WillReturnRows(joinRows)
+				mgRows := sqlmock.NewRows([]string{"id", "code", "created_at"}).
+					AddRow("4b5a784a-3333-4721-a071-2e3fbd570c7f", "chest", nil)
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "muscles"`)).
+					WillReturnRows(mgRows)
+				mgTransRows := sqlmock.NewRows([]string{"muscle_id", "lang", "name"}).
+					AddRow("4b5a784a-3333-4721-a071-2e3fbd570c7f", "ja", "胸")
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "muscle_translations"`)).
+					WillReturnRows(mgTransRows)
 			},
 		},
 		{
@@ -62,7 +76,7 @@ func TestFindAll(t *testing.T) {
 
 			repo := NewExerciseRepository(gormDB)
 
-			_, err = repo.FindAll(context.Background())
+			_, err = repo.FindAll(context.Background(), i18n.LanguageJa)
 			if tt.success && err != nil {
 				t.Errorf("expected no error, but got %v", err)
 			}
@@ -95,6 +109,7 @@ func TestFindByID(t *testing.T) {
 			name:    "success find by id",
 			success: true,
 			setup: func(mock sqlmock.Sqlmock) {
+				mock.MatchExpectationsInOrder(false)
 				rows := sqlmock.NewRows([]string{"id", "code", "category", "created_at"}).
 					AddRow(idStr, "bench_press", "compound", nil)
 				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "exercises" WHERE id = $1 ORDER BY "exercises"."id" LIMIT $2`)).
@@ -102,8 +117,20 @@ func TestFindByID(t *testing.T) {
 					WillReturnRows(rows)
 				transRows := sqlmock.NewRows([]string{"exercise_id", "lang", "name"}).
 					AddRow(idStr, "ja", "ベンチプレス")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "exercise_translations" WHERE "exercise_translations"."exercise_id" = $1`)).
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "exercise_translations"`)).
 					WillReturnRows(transRows)
+				joinRows := sqlmock.NewRows([]string{"exercise_id", "muscle_id"}).
+					AddRow(idStr, "4b5a784a-3333-4721-a071-2e3fbd570c7f")
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "exercise_muscle"`)).
+					WillReturnRows(joinRows)
+				mgRows := sqlmock.NewRows([]string{"id", "code", "created_at"}).
+					AddRow("4b5a784a-3333-4721-a071-2e3fbd570c7f", "chest", nil)
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "muscles"`)).
+					WillReturnRows(mgRows)
+				mgTransRows := sqlmock.NewRows([]string{"muscle_id", "lang", "name"}).
+					AddRow("4b5a784a-3333-4721-a071-2e3fbd570c7f", "ja", "胸")
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "muscle_translations"`)).
+					WillReturnRows(mgTransRows)
 			},
 		},
 		{
@@ -145,7 +172,7 @@ func TestFindByID(t *testing.T) {
 
 			repo := NewExerciseRepository(gormDB)
 
-			_, err = repo.FindByID(context.Background(), id)
+			_, err = repo.FindByID(context.Background(), id, i18n.LanguageJa)
 			if tt.success && err != nil {
 				t.Errorf("expected no error, but got %v", err)
 			}

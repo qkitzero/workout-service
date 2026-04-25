@@ -48,6 +48,20 @@
     }
   },
   "definitions": {
+    "exercisev1Muscle": {
+      "type": "object",
+      "properties": {
+        "muscleId": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -90,6 +104,13 @@
         },
         "category": {
           "type": "string"
+        },
+        "muscles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/exercisev1Muscle"
+          }
         }
       }
     },

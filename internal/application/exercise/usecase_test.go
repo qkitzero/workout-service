@@ -8,24 +8,31 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/qkitzero/workout-service/internal/domain/exercise"
+	"github.com/qkitzero/workout-service/internal/domain/i18n"
 	mocksexercise "github.com/qkitzero/workout-service/mocks/domain/exercise"
 )
 
 func TestListExercises(t *testing.T) {
 	t.Parallel()
 
-	code, _ := exercise.NewCode("bench_press")
-	category, _ := exercise.NewCategory("compound")
-	jaName, _ := exercise.NewName("ベンチプレス")
-	enName, _ := exercise.NewName("Bench Press")
+	code, err := exercise.NewCode("bench_press")
+	if err != nil {
+		t.Errorf("failed to new code: %v", err)
+	}
+	category, err := exercise.NewCategory("compound")
+	if err != nil {
+		t.Errorf("failed to new category: %v", err)
+	}
+	name, err := exercise.NewName("ベンチプレス")
+	if err != nil {
+		t.Errorf("failed to new name: %v", err)
+	}
 	sample := exercise.NewExercise(
 		exercise.NewExerciseID(),
 		code,
 		category,
-		[]exercise.Translation{
-			exercise.NewTranslation(exercise.LanguageJa, jaName),
-			exercise.NewTranslation(exercise.Language("en"), enName),
-		},
+		name,
+		nil,
 	)
 
 	tests := []struct {
@@ -35,14 +42,14 @@ func TestListExercises(t *testing.T) {
 		lang        string
 		findAllResp []exercise.Exercise
 		findAllErr  error
-		wantName    string
+		wantLang    i18n.Language
 	}{
-		{"success default lang", true, context.Background(), "", []exercise.Exercise{sample}, nil, "ベンチプレス"},
-		{"success ja", true, context.Background(), "ja", []exercise.Exercise{sample}, nil, "ベンチプレス"},
-		{"success en", true, context.Background(), "en", []exercise.Exercise{sample}, nil, "Bench Press"},
-		{"success empty result", true, context.Background(), "ja", []exercise.Exercise{}, nil, ""},
+		{"success default lang", true, context.Background(), "", []exercise.Exercise{sample}, nil, i18n.LanguageJa},
+		{"success ja", true, context.Background(), "ja", []exercise.Exercise{sample}, nil, i18n.LanguageJa},
+		{"success en", true, context.Background(), "en", []exercise.Exercise{sample}, nil, i18n.Language("en")},
+		{"success empty result", true, context.Background(), "ja", []exercise.Exercise{}, nil, i18n.LanguageJa},
 		{"failure invalid lang", false, context.Background(), "JA", nil, nil, ""},
-		{"failure find all error", false, context.Background(), "ja", nil, errors.New("find all error"), ""},
+		{"failure find all error", false, context.Background(), "ja", nil, errors.New("find all error"), i18n.LanguageJa},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -53,24 +60,18 @@ func TestListExercises(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockExerciseRepository := mocksexercise.NewMockExerciseRepository(ctrl)
-			mockExerciseRepository.EXPECT().FindAll(gomock.Any()).Return(tt.findAllResp, tt.findAllErr).AnyTimes()
+			if tt.wantLang != "" {
+				mockExerciseRepository.EXPECT().FindAll(gomock.Any(), tt.wantLang).Return(tt.findAllResp, tt.findAllErr).AnyTimes()
+			}
 
 			u := NewExerciseUsecase(mockExerciseRepository)
 
-			got, err := u.ListExercises(tt.ctx, tt.lang)
+			_, err := u.ListExercises(tt.ctx, tt.lang)
 			if tt.success && err != nil {
 				t.Errorf("expected no error, but got %v", err)
 			}
 			if !tt.success && err == nil {
 				t.Errorf("expected error, but got nil")
-			}
-			if tt.success && tt.wantName != "" {
-				if len(got) != 1 {
-					t.Fatalf("expected 1 result, got %d", len(got))
-				}
-				if got[0].Name.String() != tt.wantName {
-					t.Errorf("Name = %v, want %v", got[0].Name.String(), tt.wantName)
-				}
 			}
 		})
 	}

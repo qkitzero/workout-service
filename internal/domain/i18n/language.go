@@ -1,4 +1,4 @@
-package exercise
+package i18n
 
 import (
 	"fmt"

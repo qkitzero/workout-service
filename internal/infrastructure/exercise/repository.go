@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/qkitzero/workout-service/internal/domain/exercise"
+	"github.com/qkitzero/workout-service/internal/domain/i18n"
 )
 
 type exerciseRepository struct {
@@ -17,27 +18,27 @@ func NewExerciseRepository(db *gorm.DB) exercise.ExerciseRepository {
 	return &exerciseRepository{db: db}
 }
 
-func (r *exerciseRepository) FindAll(ctx context.Context) ([]exercise.Exercise, error) {
+func (r *exerciseRepository) FindAll(ctx context.Context, lang i18n.Language) ([]exercise.Exercise, error) {
 	var models []ExerciseModel
-	if err := r.db.WithContext(ctx).Preload("Translations").Find(&models).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("Translations").Preload("Muscles.Translations").Find(&models).Error; err != nil {
 		return nil, err
 	}
 	result := make([]exercise.Exercise, len(models))
 	for i, m := range models {
-		result[i] = toDomain(m)
+		result[i] = m.ToDomain(lang)
 	}
 	return result, nil
 }
 
-func (r *exerciseRepository) FindByID(ctx context.Context, id exercise.ExerciseID) (exercise.Exercise, error) {
+func (r *exerciseRepository) FindByID(ctx context.Context, id exercise.ExerciseID, lang i18n.Language) (exercise.Exercise, error) {
 	var model ExerciseModel
-	if err := r.db.WithContext(ctx).Preload("Translations").Where("id = ?", id).First(&model).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("Translations").Preload("Muscles.Translations").Where("id = ?", id).First(&model).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, exercise.ErrExerciseNotFound
 		}
 		return nil, err
 	}
-	return toDomain(model), nil
+	return model.ToDomain(lang), nil
 }
 
 func (r *exerciseRepository) Exists(ctx context.Context, id exercise.ExerciseID) (bool, error) {
@@ -46,12 +47,4 @@ func (r *exerciseRepository) Exists(ctx context.Context, id exercise.ExerciseID)
 		return false, err
 	}
 	return count > 0, nil
-}
-
-func toDomain(m ExerciseModel) exercise.Exercise {
-	translations := make([]exercise.Translation, len(m.Translations))
-	for i, t := range m.Translations {
-		translations[i] = exercise.NewTranslation(t.Lang, t.Name)
-	}
-	return exercise.NewExercise(m.ID, m.Code, m.Category, translations)
 }
