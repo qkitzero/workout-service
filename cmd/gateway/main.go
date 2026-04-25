@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 
 	exercisev1 "github.com/qkitzero/workout-service/gen/go/exercise/v1"
+	musclev1 "github.com/qkitzero/workout-service/gen/go/muscle/v1"
 	setv1 "github.com/qkitzero/workout-service/gen/go/set/v1"
 	"github.com/qkitzero/workout-service/util"
 )
@@ -48,6 +49,10 @@ func main() {
 	}
 
 	if err := exercisev1.RegisterExerciseServiceHandlerFromEndpoint(ctx, mux, endpoint, []grpc.DialOption{opts}); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := musclev1.RegisterMuscleServiceHandlerFromEndpoint(ctx, mux, endpoint, []grpc.DialOption{opts}); err != nil {
 		log.Fatal(err)
 	}
 
