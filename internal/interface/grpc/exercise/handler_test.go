@@ -8,8 +8,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	exercisev1 "github.com/qkitzero/workout-service/gen/go/exercise/v1"
-	appexercise "github.com/qkitzero/workout-service/internal/application/exercise"
 	"github.com/qkitzero/workout-service/internal/domain/exercise"
+	"github.com/qkitzero/workout-service/internal/domain/muscle"
 	mocksappexercise "github.com/qkitzero/workout-service/mocks/application/exercise"
 )
 
@@ -36,24 +36,45 @@ func TestListExercises(t *testing.T) {
 
 			mockUsecase := mocksappexercise.NewMockExerciseUsecase(ctrl)
 
-			code, _ := exercise.NewCode("bench_press")
-			category, _ := exercise.NewCategory("compound")
-			name, _ := exercise.NewName("ベンチプレス")
-			listed := []appexercise.ListedExercise{
-				{
-					ID:       exercise.NewExerciseID(),
-					Code:     code,
-					Name:     name,
-					Category: category,
-				},
+			code, err := exercise.NewCode("bench_press")
+			if err != nil {
+				t.Errorf("failed to new code: %v", err)
+			}
+			category, err := exercise.NewCategory("compound")
+			if err != nil {
+				t.Errorf("failed to new category: %v", err)
+			}
+			name, err := exercise.NewName("ベンチプレス")
+			if err != nil {
+				t.Errorf("failed to new name: %v", err)
 			}
 
-			mockUsecase.EXPECT().ListExercises(tt.ctx, tt.lang).Return(listed, tt.listExercisesErr).AnyTimes()
+			chestCode, err := muscle.NewCode("chest")
+			if err != nil {
+				t.Errorf("failed to new muscle code: %v", err)
+			}
+			chestName, err := muscle.NewName("胸")
+			if err != nil {
+				t.Errorf("failed to new muscle name: %v", err)
+			}
+			muscles := []muscle.Muscle{
+				muscle.NewMuscle(muscle.NewMuscleID(), chestCode, chestName),
+			}
+
+			sample := exercise.NewExercise(
+				exercise.NewExerciseID(),
+				code,
+				category,
+				name,
+				muscles,
+			)
+
+			mockUsecase.EXPECT().ListExercises(tt.ctx, tt.lang).Return([]exercise.Exercise{sample}, tt.listExercisesErr).AnyTimes()
 
 			handler := NewExerciseHandler(mockUsecase)
 
 			req := &exercisev1.ListExercisesRequest{Lang: tt.lang}
-			_, err := handler.ListExercises(tt.ctx, req)
+			_, err = handler.ListExercises(tt.ctx, req)
 			if tt.success && err != nil {
 				t.Errorf("expected no error, but got %v", err)
 			}

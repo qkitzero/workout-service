@@ -1,12 +1,12 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "exercise/v1/exercise.proto",
+    "title": "muscle/v1/muscle.proto",
     "version": "version not set"
   },
   "tags": [
     {
-      "name": "ExerciseService"
+      "name": "MuscleService"
     }
   ],
   "consumes": [
@@ -16,14 +16,14 @@
     "application/json"
   ],
   "paths": {
-    "/v1/exercises": {
+    "/v1/muscles": {
       "get": {
-        "operationId": "ExerciseService_ListExercises",
+        "operationId": "MuscleService_ListMuscles",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1ListExercisesResponse"
+              "$ref": "#/definitions/v1ListMusclesResponse"
             }
           },
           "default": {
@@ -42,13 +42,13 @@
           }
         ],
         "tags": [
-          "ExerciseService"
+          "MuscleService"
         ]
       }
     }
   },
   "definitions": {
-    "exercisev1Muscle": {
+    "musclev1Muscle": {
       "type": "object",
       "properties": {
         "muscleId": {
@@ -90,38 +90,14 @@
         }
       }
     },
-    "v1Exercise": {
+    "v1ListMusclesResponse": {
       "type": "object",
       "properties": {
-        "exerciseId": {
-          "type": "string"
-        },
-        "code": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "category": {
-          "type": "string"
-        },
         "muscles": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/exercisev1Muscle"
-          }
-        }
-      }
-    },
-    "v1ListExercisesResponse": {
-      "type": "object",
-      "properties": {
-        "exercises": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v1Exercise"
+            "$ref": "#/definitions/musclev1Muscle"
           }
         }
       }

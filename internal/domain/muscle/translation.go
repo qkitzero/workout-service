@@ -1,4 +1,4 @@
-package exercise
+package muscle
 
 import (
 	"github.com/qkitzero/workout-service/internal/domain/i18n"

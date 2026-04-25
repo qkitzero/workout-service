@@ -1,92 +1,123 @@
 package exercise
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/qkitzero/workout-service/internal/domain/i18n"
+	"github.com/qkitzero/workout-service/internal/domain/muscle"
+)
 
 func TestNewExercise(t *testing.T) {
 	t.Parallel()
-
 	id := NewExerciseID()
 	code, err := NewCode("bench_press")
 	if err != nil {
-		t.Fatalf("failed to new code: %v", err)
+		t.Errorf("failed to new code: %v", err)
 	}
 	category, err := NewCategory("compound")
 	if err != nil {
-		t.Fatalf("failed to new category: %v", err)
+		t.Errorf("failed to new category: %v", err)
 	}
-	jaName, err := NewName("ベンチプレス")
+	name, err := NewName("ベンチプレス")
 	if err != nil {
-		t.Fatalf("failed to new name: %v", err)
+		t.Errorf("failed to new name: %v", err)
 	}
-	enName, err := NewName("Bench Press")
+	chestID := muscle.NewMuscleID()
+	chestCode, err := muscle.NewCode("chest")
 	if err != nil {
-		t.Fatalf("failed to new name: %v", err)
+		t.Errorf("failed to new muscle code: %v", err)
 	}
+	chestName, err := muscle.NewName("胸")
+	if err != nil {
+		t.Errorf("failed to new muscle name: %v", err)
+	}
+	muscles := []muscle.Muscle{muscle.NewMuscle(chestID, chestCode, chestName)}
 
-	translations := []Translation{
-		NewTranslation(LanguageJa, jaName),
-		NewTranslation(Language("en"), enName),
+	tests := []struct {
+		name     string
+		success  bool
+		id       ExerciseID
+		code     Code
+		category Category
+		exName   Name
+		muscles  []muscle.Muscle
+	}{
+		{"success new exercise", true, id, code, category, name, muscles},
 	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	e := NewExercise(id, code, category, translations)
-
-	if e.ID() != id {
-		t.Errorf("ID() = %v, want %v", e.ID(), id)
-	}
-	if e.Code() != code {
-		t.Errorf("Code() = %v, want %v", e.Code(), code)
-	}
-	if e.Category() != category {
-		t.Errorf("Category() = %v, want %v", e.Category(), category)
-	}
-	if len(e.Translations()) != 2 {
-		t.Errorf("len(Translations()) = %d, want %d", len(e.Translations()), 2)
+			e := NewExercise(tt.id, tt.code, tt.category, tt.exName, tt.muscles)
+			if tt.success && e.ID() != tt.id {
+				t.Errorf("ID() = %v, want %v", e.ID(), tt.id)
+			}
+			if tt.success && e.Code() != tt.code {
+				t.Errorf("Code() = %v, want %v", e.Code(), tt.code)
+			}
+			if tt.success && e.Category() != tt.category {
+				t.Errorf("Category() = %v, want %v", e.Category(), tt.category)
+			}
+			if tt.success && e.Name() != tt.exName {
+				t.Errorf("Name() = %v, want %v", e.Name(), tt.exName)
+			}
+			if tt.success && len(e.Muscles()) != len(tt.muscles) {
+				t.Errorf("len(Muscles()) = %d, want %d", len(e.Muscles()), len(tt.muscles))
+			}
+		})
 	}
 }
 
-func TestExerciseName(t *testing.T) {
+func TestResolveName(t *testing.T) {
 	t.Parallel()
-
-	id := NewExerciseID()
-	code, _ := NewCode("bench_press")
-	category, _ := NewCategory("compound")
-	jaName, _ := NewName("ベンチプレス")
-	enName, _ := NewName("Bench Press")
+	code, err := NewCode("bench_press")
+	if err != nil {
+		t.Errorf("failed to new code: %v", err)
+	}
+	jaName, err := NewName("ベンチプレス")
+	if err != nil {
+		t.Errorf("failed to new name: %v", err)
+	}
+	enName, err := NewName("Bench Press")
+	if err != nil {
+		t.Errorf("failed to new name: %v", err)
+	}
 
 	tests := []struct {
 		name         string
 		translations []Translation
-		requestLang  Language
+		requestLang  i18n.Language
 		wantName     string
 	}{
 		{
 			"exact match ja",
-			[]Translation{NewTranslation(LanguageJa, jaName), NewTranslation(Language("en"), enName)},
-			LanguageJa,
+			[]Translation{NewTranslation(i18n.LanguageJa, jaName), NewTranslation(i18n.Language("en"), enName)},
+			i18n.LanguageJa,
 			"ベンチプレス",
 		},
 		{
 			"exact match en",
-			[]Translation{NewTranslation(LanguageJa, jaName), NewTranslation(Language("en"), enName)},
-			Language("en"),
+			[]Translation{NewTranslation(i18n.LanguageJa, jaName), NewTranslation(i18n.Language("en"), enName)},
+			i18n.Language("en"),
 			"Bench Press",
 		},
 		{
 			"fallback to ja when lang missing",
-			[]Translation{NewTranslation(LanguageJa, jaName)},
-			Language("en"),
+			[]Translation{NewTranslation(i18n.LanguageJa, jaName)},
+			i18n.Language("en"),
 			"ベンチプレス",
 		},
 		{
 			"fallback to code when ja missing",
-			[]Translation{NewTranslation(Language("en"), enName)},
-			Language("de"),
+			[]Translation{NewTranslation(i18n.Language("en"), enName)},
+			i18n.Language("de"),
 			"bench_press",
 		},
 		{
 			"fallback to code when no translations",
 			nil,
-			LanguageJa,
+			i18n.LanguageJa,
 			"bench_press",
 		},
 	}
@@ -95,9 +126,9 @@ func TestExerciseName(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			e := NewExercise(id, code, category, tt.translations)
-			if got := e.Name(tt.requestLang).String(); got != tt.wantName {
-				t.Errorf("Name(%v) = %v, want %v", tt.requestLang, got, tt.wantName)
+
+			if got := ResolveName(tt.translations, tt.requestLang, code).String(); got != tt.wantName {
+				t.Errorf("ResolveName(%v) = %v, want %v", tt.requestLang, got, tt.wantName)
 			}
 		})
 	}
