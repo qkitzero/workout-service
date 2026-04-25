@@ -34,8 +34,21 @@ func TestNewExerciseIDFromString(t *testing.T) {
 
 func TestNewExerciseID(t *testing.T) {
 	t.Parallel()
-	id := NewExerciseID()
-	if id.String() == "" {
-		t.Errorf("expected non-empty id")
+	tests := []struct {
+		name    string
+		success bool
+	}{
+		{"success new exercise id", true},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			id := NewExerciseID()
+			if tt.success && id.String() == "" {
+				t.Errorf("expected non-empty id")
+			}
+		})
 	}
 }
