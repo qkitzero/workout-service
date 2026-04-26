@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/qkitzero/workout-service/internal/domain/exercise"
 	"github.com/qkitzero/workout-service/internal/domain/user"
 )
 
@@ -17,9 +18,9 @@ func TestNewSet(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to new user id: %v", err)
 	}
-	exercise, err := NewExercise("bench press")
+	exerciseID, err := exercise.NewExerciseIDFromString("f1f538e5-4a37-409c-be99-09ee7bfefc50")
 	if err != nil {
-		t.Errorf("failed to new exercise: %v", err)
+		t.Errorf("failed to new exercise id: %v", err)
 	}
 	rep, err := NewRep(10)
 	if err != nil {
@@ -31,32 +32,32 @@ func TestNewSet(t *testing.T) {
 	}
 	trainedAt := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
 	tests := []struct {
-		name      string
-		success   bool
-		id        SetID
-		userID    user.UserID
-		exercise  Exercise
-		rep       Rep
-		weight    Weight
-		trainedAt time.Time
-		createdAt time.Time
+		name       string
+		success    bool
+		id         SetID
+		userID     user.UserID
+		exerciseID exercise.ExerciseID
+		rep        Rep
+		weight     Weight
+		trainedAt  time.Time
+		createdAt  time.Time
 	}{
-		{"success new set", true, id, userID, exercise, rep, weight, trainedAt, time.Now()},
+		{"success new set", true, id, userID, exerciseID, rep, weight, trainedAt, time.Now()},
 	}
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			s := NewSet(tt.id, tt.userID, tt.exercise, tt.rep, tt.weight, tt.trainedAt, tt.createdAt)
+			s := NewSet(tt.id, tt.userID, tt.exerciseID, tt.rep, tt.weight, tt.trainedAt, tt.createdAt)
 			if tt.success && s.ID() != tt.id {
 				t.Errorf("ID() = %v, want %v", s.ID(), tt.id)
 			}
 			if tt.success && s.UserID() != tt.userID {
 				t.Errorf("UserID() = %v, want %v", s.UserID(), tt.userID)
 			}
-			if tt.success && s.Exercise() != tt.exercise {
-				t.Errorf("Exercise() = %v, want %v", s.Exercise(), tt.exercise)
+			if tt.success && s.ExerciseID() != tt.exerciseID {
+				t.Errorf("ExerciseID() = %v, want %v", s.ExerciseID(), tt.exerciseID)
 			}
 			if tt.success && s.Rep() != tt.rep {
 				t.Errorf("Rep() = %v, want %v", s.Rep(), tt.rep)

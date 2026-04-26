@@ -7,9 +7,12 @@ import (
 	"time"
 
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	setv1 "github.com/qkitzero/workout-service/gen/go/set/v1"
+	"github.com/qkitzero/workout-service/internal/domain/exercise"
 	"github.com/qkitzero/workout-service/internal/domain/set"
 	mocksappset "github.com/qkitzero/workout-service/mocks/application/set"
 	mocksset "github.com/qkitzero/workout-service/mocks/domain/set"
@@ -17,18 +20,26 @@ import (
 
 func TestCreateSet(t *testing.T) {
 	t.Parallel()
+	validExerciseID := "f1f538e5-4a37-409c-be99-09ee7bfefc50"
+	trainedAt := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+
 	tests := []struct {
 		name         string
-		success      bool
 		ctx          context.Context
-		exercise     string
+		exerciseID   string
 		rep          int32
 		weight       float64
-		trainedAt    time.Time
+		callUsecase  bool
 		createSetErr error
+		wantCode     codes.Code
 	}{
-		{"success create set", true, context.Background(), "bench press", 10, 60.0, time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC), nil},
-		{"failure create set error", false, context.Background(), "bench press", 10, 60.0, time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC), fmt.Errorf("create set error")},
+		{"success create set", context.Background(), validExerciseID, 10, 60.0, true, nil, codes.OK},
+		{"failure invalid exercise id", context.Background(), "not-a-uuid", 10, 60.0, false, nil, codes.InvalidArgument},
+		{"failure invalid rep", context.Background(), validExerciseID, 0, 60.0, false, nil, codes.InvalidArgument},
+		{"failure negative weight", context.Background(), validExerciseID, 10, -1.0, false, nil, codes.InvalidArgument},
+		{"failure exercise not found", context.Background(), validExerciseID, 10, 60.0, true, exercise.ErrExerciseNotFound, codes.NotFound},
+		{"failure usecase error", context.Background(), validExerciseID, 10, 60.0, true, fmt.Errorf("create set error"), codes.Internal},
+		{"failure status preserved", context.Background(), validExerciseID, 10, 60.0, true, status.Error(codes.Unauthenticated, "auth"), codes.Unauthenticated},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -38,27 +49,25 @@ func TestCreateSet(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockSetUsecase := mocksappset.NewMockSetUsecase(ctrl)
+			mockUsecase := mocksappset.NewMockSetUsecase(ctrl)
 			mockSet := mocksset.NewMockSet(ctrl)
-			mockSetUsecase.EXPECT().CreateSet(tt.ctx, tt.exercise, tt.rep, tt.weight, tt.trainedAt).Return(mockSet, tt.createSetErr).AnyTimes()
-			mockSetID := set.NewSetID()
-			mockSet.EXPECT().ID().Return(mockSetID).AnyTimes()
+			if tt.callUsecase {
+				mockUsecase.EXPECT().CreateSet(tt.ctx, gomock.Any(), gomock.Any(), gomock.Any(), trainedAt).Return(mockSet, tt.createSetErr).Times(1)
+				mockSet.EXPECT().ID().Return(set.NewSetID()).AnyTimes()
+			}
 
-			setHandler := NewSetHandler(mockSetUsecase)
+			handler := NewSetHandler(mockUsecase)
 
 			req := &setv1.CreateSetRequest{
-				Exercise:  tt.exercise,
-				Rep:       tt.rep,
-				Weight:    tt.weight,
-				TrainedAt: timestamppb.New(tt.trainedAt),
+				ExerciseId: tt.exerciseID,
+				Rep:        tt.rep,
+				Weight:     tt.weight,
+				TrainedAt:  timestamppb.New(trainedAt),
 			}
 
-			_, err := setHandler.CreateSet(tt.ctx, req)
-			if tt.success && err != nil {
-				t.Errorf("expected no error, but got %v", err)
-			}
-			if !tt.success && err == nil {
-				t.Errorf("expected error, but got nil")
+			_, err := handler.CreateSet(tt.ctx, req)
+			if got := status.Code(err); got != tt.wantCode {
+				t.Errorf("expected code %v, got %v (err=%v)", tt.wantCode, got, err)
 			}
 		})
 	}
@@ -66,14 +75,27 @@ func TestCreateSet(t *testing.T) {
 
 func TestListSets(t *testing.T) {
 	t.Parallel()
+
+	mockSetSample := func(ctrl *gomock.Controller) *mocksset.MockSet {
+		m := mocksset.NewMockSet(ctrl)
+		m.EXPECT().ID().Return(set.NewSetID()).AnyTimes()
+		m.EXPECT().ExerciseID().Return(exercise.NewExerciseID()).AnyTimes()
+		m.EXPECT().Rep().Return(set.Rep(10)).AnyTimes()
+		m.EXPECT().Weight().Return(set.Weight(60.0)).AnyTimes()
+		m.EXPECT().TrainedAt().Return(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)).AnyTimes()
+		m.EXPECT().CreatedAt().Return(time.Now()).AnyTimes()
+		return m
+	}
+
 	tests := []struct {
 		name        string
-		success     bool
 		ctx         context.Context
 		listSetsErr error
+		wantCode    codes.Code
 	}{
-		{"success list sets", true, context.Background(), nil},
-		{"failure list sets error", false, context.Background(), fmt.Errorf("list sets error")},
+		{"success list sets", context.Background(), nil, codes.OK},
+		{"failure list sets error", context.Background(), fmt.Errorf("list sets error"), codes.Internal},
+		{"failure status preserved", context.Background(), status.Error(codes.Unauthenticated, "auth"), codes.Unauthenticated},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -83,25 +105,14 @@ func TestListSets(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockSetUsecase := mocksappset.NewMockSetUsecase(ctrl)
-			mockSet := mocksset.NewMockSet(ctrl)
-			mockSetID := set.NewSetID()
-			mockSet.EXPECT().ID().Return(mockSetID).AnyTimes()
-			mockSet.EXPECT().Exercise().Return(set.Exercise("bench press")).AnyTimes()
-			mockSet.EXPECT().Rep().Return(set.Rep(10)).AnyTimes()
-			mockSet.EXPECT().Weight().Return(set.Weight(60.0)).AnyTimes()
-			mockSet.EXPECT().TrainedAt().Return(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)).AnyTimes()
-			mockSet.EXPECT().CreatedAt().Return(time.Now()).AnyTimes()
-			mockSetUsecase.EXPECT().ListSets(tt.ctx).Return([]set.Set{mockSet}, tt.listSetsErr).AnyTimes()
+			mockUsecase := mocksappset.NewMockSetUsecase(ctrl)
+			mockUsecase.EXPECT().ListSets(tt.ctx).Return([]set.Set{mockSetSample(ctrl)}, tt.listSetsErr).Times(1)
 
-			setHandler := NewSetHandler(mockSetUsecase)
+			handler := NewSetHandler(mockUsecase)
 
-			_, err := setHandler.ListSets(tt.ctx, &setv1.ListSetsRequest{})
-			if tt.success && err != nil {
-				t.Errorf("expected no error, but got %v", err)
-			}
-			if !tt.success && err == nil {
-				t.Errorf("expected error, but got nil")
+			_, err := handler.ListSets(tt.ctx, &setv1.ListSetsRequest{})
+			if got := status.Code(err); got != tt.wantCode {
+				t.Errorf("expected code %v, got %v (err=%v)", tt.wantCode, got, err)
 			}
 		})
 	}

@@ -101,7 +101,7 @@
     "v1CreateSetRequest": {
       "type": "object",
       "properties": {
-        "exercise": {
+        "exerciseId": {
           "type": "string"
         },
         "rep": {
@@ -144,7 +144,7 @@
         "setId": {
           "type": "string"
         },
-        "exercise": {
+        "exerciseId": {
           "type": "string"
         },
         "rep": {

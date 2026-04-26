@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	set "github.com/qkitzero/workout-service/internal/domain/set"
@@ -42,30 +43,30 @@ func (m *MockSetRepository) EXPECT() *MockSetRepositoryMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockSetRepository) Create(arg0 set.Set) error {
+func (m *MockSetRepository) Create(ctx context.Context, arg1 set.Set) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", arg0)
+	ret := m.ctrl.Call(m, "Create", ctx, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockSetRepositoryMockRecorder) Create(arg0 any) *gomock.Call {
+func (mr *MockSetRepositoryMockRecorder) Create(ctx, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockSetRepository)(nil).Create), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockSetRepository)(nil).Create), ctx, arg1)
 }
 
 // FindByUserID mocks base method.
-func (m *MockSetRepository) FindByUserID(userID user.UserID) ([]set.Set, error) {
+func (m *MockSetRepository) FindByUserID(ctx context.Context, userID user.UserID) ([]set.Set, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByUserID", userID)
+	ret := m.ctrl.Call(m, "FindByUserID", ctx, userID)
 	ret0, _ := ret[0].([]set.Set)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FindByUserID indicates an expected call of FindByUserID.
-func (mr *MockSetRepositoryMockRecorder) FindByUserID(userID any) *gomock.Call {
+func (mr *MockSetRepositoryMockRecorder) FindByUserID(ctx, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByUserID", reflect.TypeOf((*MockSetRepository)(nil).FindByUserID), userID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByUserID", reflect.TypeOf((*MockSetRepository)(nil).FindByUserID), ctx, userID)
 }

@@ -23,12 +23,29 @@ classDiagram
     class Set {
         id
         userID
-        exercise
+        exerciseID
         rep
         weight
         trainedAt
         createdAt
     }
+
+    class Exercise {
+        id
+        code
+        category
+        name
+        muscles
+    }
+
+    class Muscle {
+        id
+        code
+        name
+    }
+
+    Set "*" -- "1" Exercise
+    Exercise "*" -- "*" Muscle
 ```
 
 ```mermaid
