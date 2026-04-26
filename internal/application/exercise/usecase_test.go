@@ -39,17 +39,14 @@ func TestListExercises(t *testing.T) {
 		name        string
 		success     bool
 		ctx         context.Context
-		lang        string
+		lang        i18n.Language
 		findAllResp []exercise.Exercise
 		findAllErr  error
-		wantLang    i18n.Language
 	}{
-		{"success default lang", true, context.Background(), "", []exercise.Exercise{sample}, nil, i18n.LanguageJa},
-		{"success ja", true, context.Background(), "ja", []exercise.Exercise{sample}, nil, i18n.LanguageJa},
-		{"success en", true, context.Background(), "en", []exercise.Exercise{sample}, nil, i18n.Language("en")},
-		{"success empty result", true, context.Background(), "ja", []exercise.Exercise{}, nil, i18n.LanguageJa},
-		{"failure invalid lang", false, context.Background(), "JA", nil, nil, ""},
-		{"failure find all error", false, context.Background(), "ja", nil, errors.New("find all error"), i18n.LanguageJa},
+		{"success ja", true, context.Background(), i18n.LanguageJa, []exercise.Exercise{sample}, nil},
+		{"success en", true, context.Background(), i18n.Language("en"), []exercise.Exercise{sample}, nil},
+		{"success empty result", true, context.Background(), i18n.LanguageJa, []exercise.Exercise{}, nil},
+		{"failure find all error", false, context.Background(), i18n.LanguageJa, nil, errors.New("find all error")},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -60,9 +57,7 @@ func TestListExercises(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockExerciseRepository := mocksexercise.NewMockExerciseRepository(ctrl)
-			if tt.wantLang != "" {
-				mockExerciseRepository.EXPECT().FindAll(gomock.Any(), tt.wantLang).Return(tt.findAllResp, tt.findAllErr).AnyTimes()
-			}
+			mockExerciseRepository.EXPECT().FindAll(gomock.Any(), tt.lang).Return(tt.findAllResp, tt.findAllErr).AnyTimes()
 
 			u := NewExerciseUsecase(mockExerciseRepository)
 

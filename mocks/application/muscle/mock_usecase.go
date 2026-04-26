@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	i18n "github.com/qkitzero/workout-service/internal/domain/i18n"
 	muscle "github.com/qkitzero/workout-service/internal/domain/muscle"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -42,7 +43,7 @@ func (m *MockMuscleUsecase) EXPECT() *MockMuscleUsecaseMockRecorder {
 }
 
 // ListMuscles mocks base method.
-func (m *MockMuscleUsecase) ListMuscles(ctx context.Context, lang string) ([]muscle.Muscle, error) {
+func (m *MockMuscleUsecase) ListMuscles(ctx context.Context, lang i18n.Language) ([]muscle.Muscle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListMuscles", ctx, lang)
 	ret0, _ := ret[0].([]muscle.Muscle)

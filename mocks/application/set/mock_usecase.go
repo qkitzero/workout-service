@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 	time "time"
 
+	exercise "github.com/qkitzero/workout-service/internal/domain/exercise"
 	set "github.com/qkitzero/workout-service/internal/domain/set"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -43,7 +44,7 @@ func (m *MockSetUsecase) EXPECT() *MockSetUsecaseMockRecorder {
 }
 
 // CreateSet mocks base method.
-func (m *MockSetUsecase) CreateSet(ctx context.Context, exerciseID string, rep int32, weight float64, trainedAt time.Time) (set.Set, error) {
+func (m *MockSetUsecase) CreateSet(ctx context.Context, exerciseID exercise.ExerciseID, rep set.Rep, weight set.Weight, trainedAt time.Time) (set.Set, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSet", ctx, exerciseID, rep, weight, trainedAt)
 	ret0, _ := ret[0].(set.Set)

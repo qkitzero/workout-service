@@ -8,7 +8,7 @@ import (
 )
 
 type ExerciseUsecase interface {
-	ListExercises(ctx context.Context, lang string) ([]exercise.Exercise, error)
+	ListExercises(ctx context.Context, lang i18n.Language) ([]exercise.Exercise, error)
 }
 
 type exerciseUsecase struct {
@@ -19,15 +19,6 @@ func NewExerciseUsecase(exerciseRepo exercise.ExerciseRepository) ExerciseUsecas
 	return &exerciseUsecase{exerciseRepo: exerciseRepo}
 }
 
-func (u *exerciseUsecase) ListExercises(ctx context.Context, lang string) ([]exercise.Exercise, error) {
-	language := i18n.LanguageJa
-	if lang != "" {
-		parsed, err := i18n.NewLanguage(lang)
-		if err != nil {
-			return nil, err
-		}
-		language = parsed
-	}
-
-	return u.exerciseRepo.FindAll(ctx, language)
+func (u *exerciseUsecase) ListExercises(ctx context.Context, lang i18n.Language) ([]exercise.Exercise, error) {
+	return u.exerciseRepo.FindAll(ctx, lang)
 }

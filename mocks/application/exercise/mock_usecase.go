@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	exercise "github.com/qkitzero/workout-service/internal/domain/exercise"
+	i18n "github.com/qkitzero/workout-service/internal/domain/i18n"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,7 +43,7 @@ func (m *MockExerciseUsecase) EXPECT() *MockExerciseUsecaseMockRecorder {
 }
 
 // ListExercises mocks base method.
-func (m *MockExerciseUsecase) ListExercises(ctx context.Context, lang string) ([]exercise.Exercise, error) {
+func (m *MockExerciseUsecase) ListExercises(ctx context.Context, lang i18n.Language) ([]exercise.Exercise, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListExercises", ctx, lang)
 	ret0, _ := ret[0].([]exercise.Exercise)

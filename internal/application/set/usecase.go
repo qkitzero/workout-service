@@ -11,7 +11,7 @@ import (
 )
 
 type SetUsecase interface {
-	CreateSet(ctx context.Context, exerciseID string, rep int32, weight float64, trainedAt time.Time) (set.Set, error)
+	CreateSet(ctx context.Context, exerciseID exercise.ExerciseID, rep set.Rep, weight set.Weight, trainedAt time.Time) (set.Set, error)
 	ListSets(ctx context.Context) ([]set.Set, error)
 }
 
@@ -25,7 +25,7 @@ func NewSetUsecase(authService auth.AuthService, setRepo set.SetRepository, exer
 	return &setUsecase{authService: authService, setRepo: setRepo, exerciseRepo: exerciseRepo}
 }
 
-func (u *setUsecase) CreateSet(ctx context.Context, exerciseID string, rep int32, weight float64, trainedAt time.Time) (set.Set, error) {
+func (u *setUsecase) CreateSet(ctx context.Context, exerciseID exercise.ExerciseID, rep set.Rep, weight set.Weight, trainedAt time.Time) (set.Set, error) {
 	userID, err := u.authService.VerifyToken(ctx)
 	if err != nil {
 		return nil, err
@@ -36,12 +36,7 @@ func (u *setUsecase) CreateSet(ctx context.Context, exerciseID string, rep int32
 		return nil, err
 	}
 
-	newExerciseID, err := exercise.NewExerciseIDFromString(exerciseID)
-	if err != nil {
-		return nil, err
-	}
-
-	exists, err := u.exerciseRepo.Exists(ctx, newExerciseID)
+	exists, err := u.exerciseRepo.Exists(ctx, exerciseID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,17 +44,7 @@ func (u *setUsecase) CreateSet(ctx context.Context, exerciseID string, rep int32
 		return nil, exercise.ErrExerciseNotFound
 	}
 
-	newRep, err := set.NewRep(rep)
-	if err != nil {
-		return nil, err
-	}
-
-	newWeight, err := set.NewWeight(weight)
-	if err != nil {
-		return nil, err
-	}
-
-	newSet := set.NewSet(set.NewSetID(), newUserID, newExerciseID, newRep, newWeight, trainedAt, time.Now())
+	newSet := set.NewSet(set.NewSetID(), newUserID, exerciseID, rep, weight, trainedAt, time.Now())
 
 	if err := u.setRepo.Create(ctx, newSet); err != nil {
 		return nil, err
