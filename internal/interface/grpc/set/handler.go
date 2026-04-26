@@ -3,6 +3,7 @@ package set
 import (
 	"context"
 	"errors"
+	"log"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -47,7 +48,8 @@ func (h *SetHandler) CreateSet(ctx context.Context, req *setv1.CreateSetRequest)
 		if errors.Is(err, exercise.ErrExerciseNotFound) {
 			return nil, status.Error(codes.NotFound, err.Error())
 		}
-		return nil, status.Error(codes.Internal, err.Error())
+		log.Printf("CreateSet: internal error: %v", err)
+		return nil, status.Error(codes.Internal, "internal error")
 	}
 
 	return &setv1.CreateSetResponse{
@@ -61,7 +63,8 @@ func (h *SetHandler) ListSets(ctx context.Context, req *setv1.ListSetsRequest) (
 		if _, ok := status.FromError(err); ok {
 			return nil, err
 		}
-		return nil, status.Error(codes.Internal, err.Error())
+		log.Printf("ListSets: internal error: %v", err)
+		return nil, status.Error(codes.Internal, "internal error")
 	}
 
 	responses := make([]*setv1.Set, 0, len(sets))

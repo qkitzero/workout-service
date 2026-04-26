@@ -2,6 +2,7 @@ package muscle
 
 import (
 	"context"
+	"log"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -37,7 +38,8 @@ func (h *MuscleHandler) ListMuscles(ctx context.Context, req *musclev1.ListMuscl
 		if _, ok := status.FromError(err); ok {
 			return nil, err
 		}
-		return nil, status.Error(codes.Internal, err.Error())
+		log.Printf("ListMuscles: internal error: %v", err)
+		return nil, status.Error(codes.Internal, "internal error")
 	}
 
 	responses := make([]*musclev1.Muscle, 0, len(muscles))
