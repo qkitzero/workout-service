@@ -3,8 +3,12 @@ package muscle
 import (
 	"context"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	musclev1 "github.com/qkitzero/workout-service/gen/go/muscle/v1"
 	appmuscle "github.com/qkitzero/workout-service/internal/application/muscle"
+	"github.com/qkitzero/workout-service/internal/domain/i18n"
 )
 
 type MuscleHandler struct {
@@ -19,9 +23,21 @@ func NewMuscleHandler(muscleUsecase appmuscle.MuscleUsecase) *MuscleHandler {
 }
 
 func (h *MuscleHandler) ListMuscles(ctx context.Context, req *musclev1.ListMusclesRequest) (*musclev1.ListMusclesResponse, error) {
-	muscles, err := h.muscleUsecase.ListMuscles(ctx, req.GetLang())
+	lang := i18n.LanguageJa
+	if req.GetLang() != "" {
+		parsed, err := i18n.NewLanguage(req.GetLang())
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		lang = parsed
+	}
+
+	muscles, err := h.muscleUsecase.ListMuscles(ctx, lang)
 	if err != nil {
-		return nil, err
+		if _, ok := status.FromError(err); ok {
+			return nil, err
+		}
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	responses := make([]*musclev1.Muscle, 0, len(muscles))

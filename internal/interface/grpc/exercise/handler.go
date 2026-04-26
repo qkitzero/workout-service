@@ -3,8 +3,12 @@ package exercise
 import (
 	"context"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	exercisev1 "github.com/qkitzero/workout-service/gen/go/exercise/v1"
 	appexercise "github.com/qkitzero/workout-service/internal/application/exercise"
+	"github.com/qkitzero/workout-service/internal/domain/i18n"
 )
 
 type ExerciseHandler struct {
@@ -19,9 +23,21 @@ func NewExerciseHandler(exerciseUsecase appexercise.ExerciseUsecase) *ExerciseHa
 }
 
 func (h *ExerciseHandler) ListExercises(ctx context.Context, req *exercisev1.ListExercisesRequest) (*exercisev1.ListExercisesResponse, error) {
-	exercises, err := h.exerciseUsecase.ListExercises(ctx, req.GetLang())
+	lang := i18n.LanguageJa
+	if req.GetLang() != "" {
+		parsed, err := i18n.NewLanguage(req.GetLang())
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		lang = parsed
+	}
+
+	exercises, err := h.exerciseUsecase.ListExercises(ctx, lang)
 	if err != nil {
-		return nil, err
+		if _, ok := status.FromError(err); ok {
+			return nil, err
+		}
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	responses := make([]*exercisev1.Exercise, 0, len(exercises))

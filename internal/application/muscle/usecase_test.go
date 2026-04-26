@@ -29,17 +29,14 @@ func TestListMuscles(t *testing.T) {
 		name        string
 		success     bool
 		ctx         context.Context
-		lang        string
+		lang        i18n.Language
 		findAllResp []muscle.Muscle
 		findAllErr  error
-		wantLang    i18n.Language
 	}{
-		{"success default lang", true, context.Background(), "", []muscle.Muscle{sample}, nil, i18n.LanguageJa},
-		{"success ja", true, context.Background(), "ja", []muscle.Muscle{sample}, nil, i18n.LanguageJa},
-		{"success en", true, context.Background(), "en", []muscle.Muscle{sample}, nil, i18n.Language("en")},
-		{"success empty result", true, context.Background(), "ja", []muscle.Muscle{}, nil, i18n.LanguageJa},
-		{"failure invalid lang", false, context.Background(), "JA", nil, nil, ""},
-		{"failure find all error", false, context.Background(), "ja", nil, errors.New("find all error"), i18n.LanguageJa},
+		{"success ja", true, context.Background(), i18n.LanguageJa, []muscle.Muscle{sample}, nil},
+		{"success en", true, context.Background(), i18n.Language("en"), []muscle.Muscle{sample}, nil},
+		{"success empty result", true, context.Background(), i18n.LanguageJa, []muscle.Muscle{}, nil},
+		{"failure find all error", false, context.Background(), i18n.LanguageJa, nil, errors.New("find all error")},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -50,9 +47,7 @@ func TestListMuscles(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockMuscleRepository := mocksmuscle.NewMockMuscleRepository(ctrl)
-			if tt.wantLang != "" {
-				mockMuscleRepository.EXPECT().FindAll(gomock.Any(), tt.wantLang).Return(tt.findAllResp, tt.findAllErr).AnyTimes()
-			}
+			mockMuscleRepository.EXPECT().FindAll(gomock.Any(), tt.lang).Return(tt.findAllResp, tt.findAllErr).AnyTimes()
 
 			u := NewMuscleUsecase(mockMuscleRepository)
 
