@@ -104,13 +104,13 @@ func run() error {
 		runtime.WithHealthzEndpoint(healthClient),
 	)
 
-	if err := setv1.RegisterSetServiceHandlerFromEndpoint(ctx, mux, endpoint, []grpc.DialOption{dialOpt}); err != nil {
+	if err := setv1.RegisterSetServiceHandler(ctx, mux, conn); err != nil {
 		return fmt.Errorf("register set handler: %w", err)
 	}
-	if err := exercisev1.RegisterExerciseServiceHandlerFromEndpoint(ctx, mux, endpoint, []grpc.DialOption{dialOpt}); err != nil {
+	if err := exercisev1.RegisterExerciseServiceHandler(ctx, mux, conn); err != nil {
 		return fmt.Errorf("register exercise handler: %w", err)
 	}
-	if err := musclev1.RegisterMuscleServiceHandlerFromEndpoint(ctx, mux, endpoint, []grpc.DialOption{dialOpt}); err != nil {
+	if err := musclev1.RegisterMuscleServiceHandler(ctx, mux, conn); err != nil {
 		return fmt.Errorf("register muscle handler: %w", err)
 	}
 
