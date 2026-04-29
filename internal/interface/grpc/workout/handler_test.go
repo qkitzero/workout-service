@@ -221,4 +221,3 @@ func TestListWorkouts(t *testing.T) {
 		})
 	}
 }
-
