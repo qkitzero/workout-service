@@ -14,18 +14,21 @@ import (
 	setv1 "github.com/qkitzero/workout-service/gen/go/set/v1"
 	"github.com/qkitzero/workout-service/internal/domain/exercise"
 	"github.com/qkitzero/workout-service/internal/domain/set"
+	"github.com/qkitzero/workout-service/internal/domain/workout"
 	mocksappset "github.com/qkitzero/workout-service/mocks/application/set"
 	mocksset "github.com/qkitzero/workout-service/mocks/domain/set"
 )
 
 func TestCreateSet(t *testing.T) {
 	t.Parallel()
+	validWorkoutID := "a1a1a1a1-bbac-4bb9-a41d-b04f5afc4425"
 	validExerciseID := "f1f538e5-4a37-409c-be99-09ee7bfefc50"
 	trainedAt := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	tests := []struct {
 		name         string
 		ctx          context.Context
+		workoutID    string
 		exerciseID   string
 		rep          int32
 		weight       float64
@@ -33,13 +36,17 @@ func TestCreateSet(t *testing.T) {
 		createSetErr error
 		wantCode     codes.Code
 	}{
-		{"success create set", context.Background(), validExerciseID, 10, 60.0, true, nil, codes.OK},
-		{"failure invalid exercise id", context.Background(), "not-a-uuid", 10, 60.0, false, nil, codes.InvalidArgument},
-		{"failure invalid rep", context.Background(), validExerciseID, 0, 60.0, false, nil, codes.InvalidArgument},
-		{"failure negative weight", context.Background(), validExerciseID, 10, -1.0, false, nil, codes.InvalidArgument},
-		{"failure exercise not found", context.Background(), validExerciseID, 10, 60.0, true, exercise.ErrExerciseNotFound, codes.NotFound},
-		{"failure usecase error", context.Background(), validExerciseID, 10, 60.0, true, fmt.Errorf("create set error"), codes.Internal},
-		{"failure status preserved", context.Background(), validExerciseID, 10, 60.0, true, status.Error(codes.Unauthenticated, "auth"), codes.Unauthenticated},
+		{"success create set", context.Background(), validWorkoutID, validExerciseID, 10, 60.0, true, nil, codes.OK},
+		{"failure invalid workout id", context.Background(), "not-a-uuid", validExerciseID, 10, 60.0, false, nil, codes.InvalidArgument},
+		{"failure invalid exercise id", context.Background(), validWorkoutID, "not-a-uuid", 10, 60.0, false, nil, codes.InvalidArgument},
+		{"failure invalid rep", context.Background(), validWorkoutID, validExerciseID, 0, 60.0, false, nil, codes.InvalidArgument},
+		{"failure negative weight", context.Background(), validWorkoutID, validExerciseID, 10, -1.0, false, nil, codes.InvalidArgument},
+		{"failure workout not found", context.Background(), validWorkoutID, validExerciseID, 10, 60.0, true, workout.ErrWorkoutNotFound, codes.NotFound},
+		{"failure workout forbidden", context.Background(), validWorkoutID, validExerciseID, 10, 60.0, true, workout.ErrWorkoutForbidden, codes.PermissionDenied},
+		{"failure workout already finished", context.Background(), validWorkoutID, validExerciseID, 10, 60.0, true, workout.ErrWorkoutAlreadyFinished, codes.FailedPrecondition},
+		{"failure exercise not found", context.Background(), validWorkoutID, validExerciseID, 10, 60.0, true, exercise.ErrExerciseNotFound, codes.NotFound},
+		{"failure usecase error", context.Background(), validWorkoutID, validExerciseID, 10, 60.0, true, fmt.Errorf("create set error"), codes.Internal},
+		{"failure status preserved", context.Background(), validWorkoutID, validExerciseID, 10, 60.0, true, status.Error(codes.Unauthenticated, "auth"), codes.Unauthenticated},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -52,13 +59,14 @@ func TestCreateSet(t *testing.T) {
 			mockUsecase := mocksappset.NewMockSetUsecase(ctrl)
 			mockSet := mocksset.NewMockSet(ctrl)
 			if tt.callUsecase {
-				mockUsecase.EXPECT().CreateSet(tt.ctx, gomock.Any(), gomock.Any(), gomock.Any(), trainedAt).Return(mockSet, tt.createSetErr).Times(1)
+				mockUsecase.EXPECT().CreateSet(tt.ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), trainedAt).Return(mockSet, tt.createSetErr).Times(1)
 				mockSet.EXPECT().ID().Return(set.NewSetID()).AnyTimes()
 			}
 
 			handler := NewSetHandler(mockUsecase)
 
 			req := &setv1.CreateSetRequest{
+				WorkoutId:  tt.workoutID,
 				ExerciseId: tt.exerciseID,
 				Rep:        tt.rep,
 				Weight:     tt.weight,
@@ -79,6 +87,7 @@ func TestListSets(t *testing.T) {
 	mockSetSample := func(ctrl *gomock.Controller) *mocksset.MockSet {
 		m := mocksset.NewMockSet(ctrl)
 		m.EXPECT().ID().Return(set.NewSetID()).AnyTimes()
+		m.EXPECT().WorkoutID().Return(workout.NewWorkoutID()).AnyTimes()
 		m.EXPECT().ExerciseID().Return(exercise.NewExerciseID()).AnyTimes()
 		m.EXPECT().Rep().Return(set.Rep(10)).AnyTimes()
 		m.EXPECT().Weight().Return(set.Weight(60.0)).AnyTimes()

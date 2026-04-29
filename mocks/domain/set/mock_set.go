@@ -16,6 +16,7 @@ import (
 	exercise "github.com/qkitzero/workout-service/internal/domain/exercise"
 	set "github.com/qkitzero/workout-service/internal/domain/set"
 	user "github.com/qkitzero/workout-service/internal/domain/user"
+	workout "github.com/qkitzero/workout-service/internal/domain/workout"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -139,4 +140,18 @@ func (m *MockSet) Weight() set.Weight {
 func (mr *MockSetMockRecorder) Weight() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Weight", reflect.TypeOf((*MockSet)(nil).Weight))
+}
+
+// WorkoutID mocks base method.
+func (m *MockSet) WorkoutID() workout.WorkoutID {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkoutID")
+	ret0, _ := ret[0].(workout.WorkoutID)
+	return ret0
+}
+
+// WorkoutID indicates an expected call of WorkoutID.
+func (mr *MockSetMockRecorder) WorkoutID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkoutID", reflect.TypeOf((*MockSet)(nil).WorkoutID))
 }
