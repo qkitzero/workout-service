@@ -13,6 +13,7 @@ import (
 	appset "github.com/qkitzero/workout-service/internal/application/set"
 	"github.com/qkitzero/workout-service/internal/domain/exercise"
 	"github.com/qkitzero/workout-service/internal/domain/set"
+	"github.com/qkitzero/workout-service/internal/domain/workout"
 )
 
 type SetHandler struct {
@@ -27,6 +28,10 @@ func NewSetHandler(setUsecase appset.SetUsecase) *SetHandler {
 }
 
 func (h *SetHandler) CreateSet(ctx context.Context, req *setv1.CreateSetRequest) (*setv1.CreateSetResponse, error) {
+	workoutID, err := workout.NewWorkoutIDFromString(req.GetWorkoutId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 	exerciseID, err := exercise.NewExerciseIDFromString(req.GetExerciseId())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -40,12 +45,19 @@ func (h *SetHandler) CreateSet(ctx context.Context, req *setv1.CreateSetRequest)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	s, err := h.setUsecase.CreateSet(ctx, exerciseID, rep, weight, req.GetTrainedAt().AsTime())
+	s, err := h.setUsecase.CreateSet(ctx, workoutID, exerciseID, rep, weight, req.GetTrainedAt().AsTime())
 	if err != nil {
 		if _, ok := status.FromError(err); ok {
 			return nil, err
 		}
-		if errors.Is(err, exercise.ErrExerciseNotFound) {
+		switch {
+		case errors.Is(err, workout.ErrWorkoutNotFound):
+			return nil, status.Error(codes.NotFound, err.Error())
+		case errors.Is(err, workout.ErrWorkoutForbidden):
+			return nil, status.Error(codes.PermissionDenied, err.Error())
+		case errors.Is(err, workout.ErrWorkoutAlreadyFinished):
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		case errors.Is(err, exercise.ErrExerciseNotFound):
 			return nil, status.Error(codes.NotFound, err.Error())
 		}
 		log.Printf("CreateSet: internal error: %v", err)
@@ -71,6 +83,7 @@ func (h *SetHandler) ListSets(ctx context.Context, req *setv1.ListSetsRequest) (
 	for _, s := range sets {
 		responses = append(responses, &setv1.Set{
 			SetId:      s.ID().String(),
+			WorkoutId:  s.WorkoutID().String(),
 			ExerciseId: s.ExerciseID().String(),
 			Rep:        s.Rep().Int32(),
 			Weight:     s.Weight().Float64(),

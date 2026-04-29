@@ -7,6 +7,7 @@ import (
 
 	"github.com/qkitzero/workout-service/internal/domain/set"
 	"github.com/qkitzero/workout-service/internal/domain/user"
+	"github.com/qkitzero/workout-service/internal/domain/workout"
 )
 
 type setRepository struct {
@@ -22,6 +23,7 @@ func (r *setRepository) Create(ctx context.Context, s set.Set) error {
 		setModel := SetModel{
 			ID:         s.ID(),
 			UserID:     s.UserID(),
+			WorkoutID:  s.WorkoutID(),
 			ExerciseID: s.ExerciseID(),
 			Rep:        s.Rep(),
 			Weight:     s.Weight(),
@@ -45,7 +47,21 @@ func (r *setRepository) FindByUserID(ctx context.Context, userID user.UserID) ([
 
 	sets := make([]set.Set, len(setModels))
 	for i, m := range setModels {
-		sets[i] = set.NewSet(m.ID, m.UserID, m.ExerciseID, m.Rep, m.Weight, m.TrainedAt, m.CreatedAt)
+		sets[i] = set.NewSet(m.ID, m.UserID, m.WorkoutID, m.ExerciseID, m.Rep, m.Weight, m.TrainedAt, m.CreatedAt)
+	}
+
+	return sets, nil
+}
+
+func (r *setRepository) FindByWorkoutID(ctx context.Context, workoutID workout.WorkoutID) ([]set.Set, error) {
+	var setModels []SetModel
+	if err := r.db.WithContext(ctx).Where("workout_id = ?", workoutID).Find(&setModels).Error; err != nil {
+		return nil, err
+	}
+
+	sets := make([]set.Set, len(setModels))
+	for i, m := range setModels {
+		sets[i] = set.NewSet(m.ID, m.UserID, m.WorkoutID, m.ExerciseID, m.Rep, m.Weight, m.TrainedAt, m.CreatedAt)
 	}
 
 	return sets, nil

@@ -21,18 +21,20 @@ service SetService {
 
 message Set {
   string set_id = 1;
+  string workout_id = 2;
+  string exercise_id = 3;
+  int32 rep = 4;
+  double weight = 5;
+  google.protobuf.Timestamp trained_at = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message CreateSetRequest {
+  string workout_id = 1;
   string exercise_id = 2;
   int32 rep = 3;
   double weight = 4;
   google.protobuf.Timestamp trained_at = 5;
-  google.protobuf.Timestamp created_at = 6;
-}
-
-message CreateSetRequest {
-  string exercise_id = 1;
-  int32 rep = 2;
-  double weight = 3;
-  google.protobuf.Timestamp trained_at = 4;
 }
 
 message CreateSetResponse {

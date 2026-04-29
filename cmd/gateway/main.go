@@ -21,6 +21,7 @@ import (
 	exercisev1 "github.com/qkitzero/workout-service/gen/go/exercise/v1"
 	musclev1 "github.com/qkitzero/workout-service/gen/go/muscle/v1"
 	setv1 "github.com/qkitzero/workout-service/gen/go/set/v1"
+	workoutv1 "github.com/qkitzero/workout-service/gen/go/workout/v1"
 )
 
 const (
@@ -106,6 +107,9 @@ func run() error {
 
 	if err := setv1.RegisterSetServiceHandler(ctx, mux, conn); err != nil {
 		return fmt.Errorf("register set handler: %w", err)
+	}
+	if err := workoutv1.RegisterWorkoutServiceHandler(ctx, mux, conn); err != nil {
+		return fmt.Errorf("register workout handler: %w", err)
 	}
 	if err := exercisev1.RegisterExerciseServiceHandler(ctx, mux, conn); err != nil {
 		return fmt.Errorf("register exercise handler: %w", err)
