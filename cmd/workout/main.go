@@ -22,17 +22,21 @@ import (
 	exercisev1 "github.com/qkitzero/workout-service/gen/go/exercise/v1"
 	musclev1 "github.com/qkitzero/workout-service/gen/go/muscle/v1"
 	setv1 "github.com/qkitzero/workout-service/gen/go/set/v1"
+	workoutv1 "github.com/qkitzero/workout-service/gen/go/workout/v1"
 	appexercise "github.com/qkitzero/workout-service/internal/application/exercise"
 	appmuscle "github.com/qkitzero/workout-service/internal/application/muscle"
 	appset "github.com/qkitzero/workout-service/internal/application/set"
+	appworkout "github.com/qkitzero/workout-service/internal/application/workout"
 	apiauth "github.com/qkitzero/workout-service/internal/infrastructure/api/auth"
 	"github.com/qkitzero/workout-service/internal/infrastructure/db"
 	infraexercise "github.com/qkitzero/workout-service/internal/infrastructure/exercise"
 	inframuscle "github.com/qkitzero/workout-service/internal/infrastructure/muscle"
 	infraset "github.com/qkitzero/workout-service/internal/infrastructure/set"
+	infraworkout "github.com/qkitzero/workout-service/internal/infrastructure/workout"
 	grpcexercise "github.com/qkitzero/workout-service/internal/interface/grpc/exercise"
 	grpcmuscle "github.com/qkitzero/workout-service/internal/interface/grpc/muscle"
 	grpcset "github.com/qkitzero/workout-service/internal/interface/grpc/set"
+	grpcworkout "github.com/qkitzero/workout-service/internal/interface/grpc/workout"
 )
 
 const shutdownTimeout = 15 * time.Second
@@ -130,26 +134,31 @@ func run() error {
 
 	authServiceClient := authv1.NewAuthServiceClient(conn)
 	setRepository := infraset.NewSetRepository(gormDB)
+	workoutRepository := infraworkout.NewWorkoutRepository(gormDB)
 	exerciseRepository := infraexercise.NewExerciseRepository(gormDB)
 	muscleRepository := inframuscle.NewMuscleRepository(gormDB)
 
 	authService := apiauth.NewAuthService(authServiceClient)
-	setUsecase := appset.NewSetUsecase(authService, setRepository, exerciseRepository)
+	setUsecase := appset.NewSetUsecase(authService, setRepository, workoutRepository, exerciseRepository)
+	workoutUsecase := appworkout.NewWorkoutUsecase(authService, workoutRepository, setRepository)
 	exerciseUsecase := appexercise.NewExerciseUsecase(exerciseRepository)
 	muscleUsecase := appmuscle.NewMuscleUsecase(muscleRepository)
 
 	healthServer := health.NewServer()
 	setHandler := grpcset.NewSetHandler(setUsecase)
+	workoutHandler := grpcworkout.NewWorkoutHandler(workoutUsecase)
 	exerciseHandler := grpcexercise.NewExerciseHandler(exerciseUsecase)
 	muscleHandler := grpcmuscle.NewMuscleHandler(muscleUsecase)
 
 	grpc_health_v1.RegisterHealthServer(server, healthServer)
 	setv1.RegisterSetServiceServer(server, setHandler)
+	workoutv1.RegisterWorkoutServiceServer(server, workoutHandler)
 	exercisev1.RegisterExerciseServiceServer(server, exerciseHandler)
 	musclev1.RegisterMuscleServiceServer(server, muscleHandler)
 
 	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
 	healthServer.SetServingStatus("set", grpc_health_v1.HealthCheckResponse_SERVING)
+	healthServer.SetServingStatus("workout", grpc_health_v1.HealthCheckResponse_SERVING)
 	healthServer.SetServingStatus("exercise", grpc_health_v1.HealthCheckResponse_SERVING)
 	healthServer.SetServingStatus("muscle", grpc_health_v1.HealthCheckResponse_SERVING)
 
