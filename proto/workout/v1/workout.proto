@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package workout.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "set/v1/set.proto";
+
+option go_package = "github.com/qkitzero/workout-service/gen/go/workout/v1";
+
+service WorkoutService {
+  rpc StartWorkout(StartWorkoutRequest) returns (StartWorkoutResponse) {
+    option (google.api.http) = {
+      post: "/v1/workouts/start"
+      body: "*"
+    };
+  }
+  rpc FinishWorkout(FinishWorkoutRequest) returns (FinishWorkoutResponse) {
+    option (google.api.http) = {
+      post: "/v1/workouts/{workout_id}/finish"
+      body: "*"
+    };
+  }
+  rpc GetWorkout(GetWorkoutRequest) returns (GetWorkoutResponse) {
+    option (google.api.http) = {get: "/v1/workouts/{workout_id}"};
+  }
+  rpc ListWorkouts(ListWorkoutsRequest) returns (ListWorkoutsResponse) {
+    option (google.api.http) = {get: "/v1/workouts"};
+  }
+}
+
+message Workout {
+  string workout_id = 1;
+  google.protobuf.Timestamp started_at = 2;
+  google.protobuf.Timestamp finished_at = 3;
+  google.protobuf.Timestamp created_at = 4;
+}
+
+message StartWorkoutRequest {}
+
+message StartWorkoutResponse {
+  string workout_id = 1;
+}
+
+message FinishWorkoutRequest {
+  string workout_id = 1;
+}
+
+message FinishWorkoutResponse {
+  google.protobuf.Timestamp finished_at = 1;
+}
+
+message GetWorkoutRequest {
+  string workout_id = 1;
+}
+
+message GetWorkoutResponse {
+  Workout workout = 1;
+  repeated set.v1.Set sets = 2;
+}
+
+message ListWorkoutsRequest {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+}
+
+message ListWorkoutsResponse {
+  repeated Workout workouts = 1;
+}
