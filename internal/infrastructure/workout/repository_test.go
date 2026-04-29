@@ -166,10 +166,10 @@ func TestFindByID(t *testing.T) {
 	t.Parallel()
 	id := workout.WorkoutID{UUID: uuid.New()}
 	tests := []struct {
-		name    string
-		success bool
+		name     string
+		success  bool
 		notFound bool
-		setup   func(mock sqlmock.Sqlmock, id workout.WorkoutID)
+		setup    func(mock sqlmock.Sqlmock, id workout.WorkoutID)
 	}{
 		{
 			name:    "success find by id",

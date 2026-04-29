@@ -2,6 +2,4 @@ package set
 
 import "errors"
 
-var (
-	ErrSetNotFound = errors.New("set not found")
-)
+var ErrSetNotFound = errors.New("set not found")
