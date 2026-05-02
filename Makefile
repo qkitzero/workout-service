@@ -41,7 +41,9 @@ mock-gen:
 	go tool mockgen -source=internal/application/exercise/usecase.go -destination=mocks/application/exercise/mock_usecase.go -package=mocks
 	go tool mockgen -source=internal/application/muscle/usecase.go -destination=mocks/application/muscle/mock_usecase.go -package=mocks
 	go tool mockgen -source=internal/application/auth/service.go -destination=mocks/application/auth/mock_service.go -package=mocks
+	go tool mockgen -source=internal/application/user/service.go -destination=mocks/application/user/mock_service.go -package=mocks
 	go tool mockgen -destination=mocks/external/auth/v1/mock_client.go -package=mocks github.com/qkitzero/auth-service/gen/go/auth/v1 AuthServiceClient
+	go tool mockgen -destination=mocks/external/user/v1/mock_client.go -package=mocks github.com/qkitzero/user-service/gen/go/user/v1 UserServiceClient
 
 MIGRATIONS_DIR=internal/infrastructure/db/migrations
 MIGRATE=migrate -source file://$(MIGRATIONS_DIR) -database "postgres://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_HOST_PORT)/$(DB_NAME)?sslmode=$(DB_SSL_MODE)"

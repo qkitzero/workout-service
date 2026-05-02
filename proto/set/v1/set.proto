@@ -17,6 +17,18 @@ service SetService {
   rpc ListSets(ListSetsRequest) returns (ListSetsResponse) {
     option (google.api.http) = {get: "/v1/sets"};
   }
+  rpc GetSet(GetSetRequest) returns (GetSetResponse) {
+    option (google.api.http) = {get: "/v1/sets/{set_id}"};
+  }
+  rpc UpdateSet(UpdateSetRequest) returns (UpdateSetResponse) {
+    option (google.api.http) = {
+      patch: "/v1/sets/{set_id}"
+      body: "*"
+    };
+  }
+  rpc DeleteSet(DeleteSetRequest) returns (DeleteSetResponse) {
+    option (google.api.http) = {delete: "/v1/sets/{set_id}"};
+  }
 }
 
 message Set {
@@ -46,3 +58,29 @@ message ListSetsRequest {}
 message ListSetsResponse {
   repeated Set sets = 1;
 }
+
+message GetSetRequest {
+  string set_id = 1;
+}
+
+message GetSetResponse {
+  Set set = 1;
+}
+
+message UpdateSetRequest {
+  string set_id = 1;
+  string exercise_id = 2;
+  int32 rep = 3;
+  double weight = 4;
+  google.protobuf.Timestamp trained_at = 5;
+}
+
+message UpdateSetResponse {
+  Set set = 1;
+}
+
+message DeleteSetRequest {
+  string set_id = 1;
+}
+
+message DeleteSetResponse {}

@@ -2,6 +2,7 @@ package set
 
 import (
 	"context"
+	"errors"
 
 	"gorm.io/gorm"
 
@@ -37,6 +38,47 @@ func (r *setRepository) Create(ctx context.Context, s set.Set) error {
 
 		return nil
 	})
+}
+
+func (r *setRepository) Update(ctx context.Context, s set.Set) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		setModel := SetModel{
+			ID:         s.ID(),
+			UserID:     s.UserID(),
+			WorkoutID:  s.WorkoutID(),
+			ExerciseID: s.ExerciseID(),
+			Rep:        s.Rep(),
+			Weight:     s.Weight(),
+			TrainedAt:  s.TrainedAt(),
+			CreatedAt:  s.CreatedAt(),
+		}
+
+		if err := tx.Save(&setModel).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func (r *setRepository) Delete(ctx context.Context, id set.SetID) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("id = ?", id).Delete(&SetModel{}).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+func (r *setRepository) FindByID(ctx context.Context, id set.SetID) (set.Set, error) {
+	var m SetModel
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&m).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, set.ErrSetNotFound
+		}
+		return nil, err
+	}
+	return set.NewSet(m.ID, m.UserID, m.WorkoutID, m.ExerciseID, m.Rep, m.Weight, m.TrainedAt, m.CreatedAt), nil
 }
 
 func (r *setRepository) FindByUserID(ctx context.Context, userID user.UserID) ([]set.Set, error) {
