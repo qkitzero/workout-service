@@ -59,6 +59,35 @@ func (mr *MockSetUsecaseMockRecorder) CreateSet(ctx, workoutID, exerciseID, rep,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSet", reflect.TypeOf((*MockSetUsecase)(nil).CreateSet), ctx, workoutID, exerciseID, rep, weight, trainedAt)
 }
 
+// DeleteSet mocks base method.
+func (m *MockSetUsecase) DeleteSet(ctx context.Context, id set.SetID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSet", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSet indicates an expected call of DeleteSet.
+func (mr *MockSetUsecaseMockRecorder) DeleteSet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSet", reflect.TypeOf((*MockSetUsecase)(nil).DeleteSet), ctx, id)
+}
+
+// GetSet mocks base method.
+func (m *MockSetUsecase) GetSet(ctx context.Context, id set.SetID) (set.Set, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSet", ctx, id)
+	ret0, _ := ret[0].(set.Set)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSet indicates an expected call of GetSet.
+func (mr *MockSetUsecaseMockRecorder) GetSet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSet", reflect.TypeOf((*MockSetUsecase)(nil).GetSet), ctx, id)
+}
+
 // ListSets mocks base method.
 func (m *MockSetUsecase) ListSets(ctx context.Context) ([]set.Set, error) {
 	m.ctrl.T.Helper()
@@ -72,4 +101,19 @@ func (m *MockSetUsecase) ListSets(ctx context.Context) ([]set.Set, error) {
 func (mr *MockSetUsecaseMockRecorder) ListSets(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSets", reflect.TypeOf((*MockSetUsecase)(nil).ListSets), ctx)
+}
+
+// UpdateSet mocks base method.
+func (m *MockSetUsecase) UpdateSet(ctx context.Context, id set.SetID, exerciseID exercise.ExerciseID, rep set.Rep, weight set.Weight, trainedAt time.Time) (set.Set, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSet", ctx, id, exerciseID, rep, weight, trainedAt)
+	ret0, _ := ret[0].(set.Set)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateSet indicates an expected call of UpdateSet.
+func (mr *MockSetUsecaseMockRecorder) UpdateSet(ctx, id, exerciseID, rep, weight, trainedAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSet", reflect.TypeOf((*MockSetUsecase)(nil).UpdateSet), ctx, id, exerciseID, rep, weight, trainedAt)
 }

@@ -57,6 +57,35 @@ func (mr *MockSetRepositoryMockRecorder) Create(ctx, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockSetRepository)(nil).Create), ctx, arg1)
 }
 
+// Delete mocks base method.
+func (m *MockSetRepository) Delete(ctx context.Context, id set.SetID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockSetRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSetRepository)(nil).Delete), ctx, id)
+}
+
+// FindByID mocks base method.
+func (m *MockSetRepository) FindByID(ctx context.Context, id set.SetID) (set.Set, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindByID", ctx, id)
+	ret0, _ := ret[0].(set.Set)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindByID indicates an expected call of FindByID.
+func (mr *MockSetRepositoryMockRecorder) FindByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByID", reflect.TypeOf((*MockSetRepository)(nil).FindByID), ctx, id)
+}
+
 // FindByUserID mocks base method.
 func (m *MockSetRepository) FindByUserID(ctx context.Context, userID user.UserID) ([]set.Set, error) {
 	m.ctrl.T.Helper()
@@ -85,4 +114,18 @@ func (m *MockSetRepository) FindByWorkoutID(ctx context.Context, workoutID worko
 func (mr *MockSetRepositoryMockRecorder) FindByWorkoutID(ctx, workoutID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByWorkoutID", reflect.TypeOf((*MockSetRepository)(nil).FindByWorkoutID), ctx, workoutID)
+}
+
+// Update mocks base method.
+func (m *MockSetRepository) Update(ctx context.Context, arg1 set.Set) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Update", ctx, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Update indicates an expected call of Update.
+func (mr *MockSetRepositoryMockRecorder) Update(ctx, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockSetRepository)(nil).Update), ctx, arg1)
 }

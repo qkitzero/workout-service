@@ -96,3 +96,108 @@ func (h *SetHandler) ListSets(ctx context.Context, req *setv1.ListSetsRequest) (
 		Sets: responses,
 	}, nil
 }
+
+func (h *SetHandler) GetSet(ctx context.Context, req *setv1.GetSetRequest) (*setv1.GetSetResponse, error) {
+	setID, err := set.NewSetIDFromString(req.GetSetId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	s, err := h.setUsecase.GetSet(ctx, setID)
+	if err != nil {
+		if _, ok := status.FromError(err); ok {
+			return nil, err
+		}
+		switch {
+		case errors.Is(err, set.ErrSetNotFound):
+			return nil, status.Error(codes.NotFound, err.Error())
+		case errors.Is(err, set.ErrSetForbidden):
+			return nil, status.Error(codes.PermissionDenied, err.Error())
+		}
+		log.Printf("GetSet: internal error: %v", err)
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+
+	return &setv1.GetSetResponse{
+		Set: &setv1.Set{
+			SetId:      s.ID().String(),
+			WorkoutId:  s.WorkoutID().String(),
+			ExerciseId: s.ExerciseID().String(),
+			Rep:        s.Rep().Int32(),
+			Weight:     s.Weight().Float64(),
+			TrainedAt:  timestamppb.New(s.TrainedAt()),
+			CreatedAt:  timestamppb.New(s.CreatedAt()),
+		},
+	}, nil
+}
+
+func (h *SetHandler) UpdateSet(ctx context.Context, req *setv1.UpdateSetRequest) (*setv1.UpdateSetResponse, error) {
+	setID, err := set.NewSetIDFromString(req.GetSetId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	exerciseID, err := exercise.NewExerciseIDFromString(req.GetExerciseId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	rep, err := set.NewRep(req.GetRep())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	weight, err := set.NewWeight(req.GetWeight())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	s, err := h.setUsecase.UpdateSet(ctx, setID, exerciseID, rep, weight, req.GetTrainedAt().AsTime())
+	if err != nil {
+		if _, ok := status.FromError(err); ok {
+			return nil, err
+		}
+		switch {
+		case errors.Is(err, set.ErrSetNotFound):
+			return nil, status.Error(codes.NotFound, err.Error())
+		case errors.Is(err, set.ErrSetForbidden):
+			return nil, status.Error(codes.PermissionDenied, err.Error())
+		case errors.Is(err, exercise.ErrExerciseNotFound):
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		log.Printf("UpdateSet: internal error: %v", err)
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+
+	return &setv1.UpdateSetResponse{
+		Set: &setv1.Set{
+			SetId:      s.ID().String(),
+			WorkoutId:  s.WorkoutID().String(),
+			ExerciseId: s.ExerciseID().String(),
+			Rep:        s.Rep().Int32(),
+			Weight:     s.Weight().Float64(),
+			TrainedAt:  timestamppb.New(s.TrainedAt()),
+			CreatedAt:  timestamppb.New(s.CreatedAt()),
+		},
+	}, nil
+}
+
+func (h *SetHandler) DeleteSet(ctx context.Context, req *setv1.DeleteSetRequest) (*setv1.DeleteSetResponse, error) {
+	setID, err := set.NewSetIDFromString(req.GetSetId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	if err := h.setUsecase.DeleteSet(ctx, setID); err != nil {
+		if _, ok := status.FromError(err); ok {
+			return nil, err
+		}
+		switch {
+		case errors.Is(err, set.ErrSetNotFound):
+			return nil, status.Error(codes.NotFound, err.Error())
+		case errors.Is(err, set.ErrSetForbidden):
+			return nil, status.Error(codes.PermissionDenied, err.Error())
+		}
+		log.Printf("DeleteSet: internal error: %v", err)
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+
+	return &setv1.DeleteSetResponse{}, nil
+}

@@ -12,7 +12,7 @@ import (
 	"github.com/qkitzero/workout-service/internal/domain/set"
 	"github.com/qkitzero/workout-service/internal/domain/user"
 	"github.com/qkitzero/workout-service/internal/domain/workout"
-	mocksappauth "github.com/qkitzero/workout-service/mocks/application/auth"
+	mocksappuser "github.com/qkitzero/workout-service/mocks/application/user"
 	mocksset "github.com/qkitzero/workout-service/mocks/domain/set"
 	mocksworkout "github.com/qkitzero/workout-service/mocks/domain/workout"
 )
@@ -22,15 +22,15 @@ func TestStartWorkout(t *testing.T) {
 	validUserID := "fe8c2263-bbac-4bb9-a41d-b04f5afc4425"
 
 	tests := []struct {
-		name           string
-		success        bool
-		ctx            context.Context
-		userID         string
-		verifyTokenErr error
-		createErr      error
+		name       string
+		success    bool
+		ctx        context.Context
+		userID     string
+		getUserErr error
+		createErr  error
 	}{
 		{"success start workout", true, context.Background(), validUserID, nil, nil},
-		{"failure verify token error", false, context.Background(), "", fmt.Errorf("verify token error"), nil},
+		{"failure get user error", false, context.Background(), "", fmt.Errorf("get user error"), nil},
 		{"failure empty user id", false, context.Background(), "", nil, nil},
 		{"failure create error", false, context.Background(), validUserID, nil, errors.New("create error")},
 	}
@@ -42,13 +42,13 @@ func TestStartWorkout(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockAuthService := mocksappauth.NewMockAuthService(ctrl)
+			mockUserService := mocksappuser.NewMockUserService(ctrl)
 			mockWorkoutRepository := mocksworkout.NewMockWorkoutRepository(ctrl)
 			mockSetRepository := mocksset.NewMockSetRepository(ctrl)
-			mockAuthService.EXPECT().VerifyToken(tt.ctx).Return(tt.userID, tt.verifyTokenErr).AnyTimes()
+			mockUserService.EXPECT().GetUser(tt.ctx).Return(tt.userID, tt.getUserErr).AnyTimes()
 			mockWorkoutRepository.EXPECT().Create(gomock.Any(), gomock.Any()).Return(tt.createErr).AnyTimes()
 
-			u := NewWorkoutUsecase(mockAuthService, mockWorkoutRepository, mockSetRepository)
+			u := NewWorkoutUsecase(mockUserService, mockWorkoutRepository, mockSetRepository)
 
 			_, err := u.StartWorkout(tt.ctx)
 			if tt.success && err != nil {
@@ -68,18 +68,18 @@ func TestFinishWorkout(t *testing.T) {
 	id := workout.NewWorkoutID()
 
 	tests := []struct {
-		name           string
-		success        bool
-		ctx            context.Context
-		userID         string
-		verifyTokenErr error
-		owner          string
-		finished       bool
-		findByIDErr    error
-		updateErr      error
+		name        string
+		success     bool
+		ctx         context.Context
+		userID      string
+		getUserErr  error
+		owner       string
+		finished    bool
+		findByIDErr error
+		updateErr   error
 	}{
 		{"success finish workout", true, context.Background(), validUserID, nil, validUserID, false, nil, nil},
-		{"failure verify token error", false, context.Background(), "", fmt.Errorf("verify token error"), "", false, nil, nil},
+		{"failure get user error", false, context.Background(), "", fmt.Errorf("get user error"), "", false, nil, nil},
 		{"failure empty user id", false, context.Background(), "", nil, "", false, nil, nil},
 		{"failure not found", false, context.Background(), validUserID, nil, "", false, workout.ErrWorkoutNotFound, nil},
 		{"failure forbidden", false, context.Background(), validUserID, nil, otherUserID, false, nil, nil},
@@ -94,10 +94,10 @@ func TestFinishWorkout(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockAuthService := mocksappauth.NewMockAuthService(ctrl)
+			mockUserService := mocksappuser.NewMockUserService(ctrl)
 			mockWorkoutRepository := mocksworkout.NewMockWorkoutRepository(ctrl)
 			mockSetRepository := mocksset.NewMockSetRepository(ctrl)
-			mockAuthService.EXPECT().VerifyToken(tt.ctx).Return(tt.userID, tt.verifyTokenErr).AnyTimes()
+			mockUserService.EXPECT().GetUser(tt.ctx).Return(tt.userID, tt.getUserErr).AnyTimes()
 
 			mockWorkout := mocksworkout.NewMockWorkout(ctrl)
 			mockWorkout.EXPECT().ID().Return(id).AnyTimes()
@@ -108,7 +108,7 @@ func TestFinishWorkout(t *testing.T) {
 			mockWorkoutRepository.EXPECT().FindByID(gomock.Any(), gomock.Any()).Return(mockWorkout, tt.findByIDErr).AnyTimes()
 			mockWorkoutRepository.EXPECT().Update(gomock.Any(), gomock.Any()).Return(tt.updateErr).AnyTimes()
 
-			u := NewWorkoutUsecase(mockAuthService, mockWorkoutRepository, mockSetRepository)
+			u := NewWorkoutUsecase(mockUserService, mockWorkoutRepository, mockSetRepository)
 
 			_, err := u.FinishWorkout(tt.ctx, id)
 			if tt.success && err != nil {
@@ -132,13 +132,13 @@ func TestGetWorkout(t *testing.T) {
 		success          bool
 		ctx              context.Context
 		userID           string
-		verifyTokenErr   error
+		getUserErr       error
 		owner            string
 		findByIDErr      error
 		findByWorkoutErr error
 	}{
 		{"success get workout", true, context.Background(), validUserID, nil, validUserID, nil, nil},
-		{"failure verify token error", false, context.Background(), "", fmt.Errorf("verify token error"), "", nil, nil},
+		{"failure get user error", false, context.Background(), "", fmt.Errorf("get user error"), "", nil, nil},
 		{"failure empty user id", false, context.Background(), "", nil, "", nil, nil},
 		{"failure not found", false, context.Background(), validUserID, nil, "", workout.ErrWorkoutNotFound, nil},
 		{"failure forbidden", false, context.Background(), validUserID, nil, otherUserID, nil, nil},
@@ -152,17 +152,17 @@ func TestGetWorkout(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockAuthService := mocksappauth.NewMockAuthService(ctrl)
+			mockUserService := mocksappuser.NewMockUserService(ctrl)
 			mockWorkoutRepository := mocksworkout.NewMockWorkoutRepository(ctrl)
 			mockSetRepository := mocksset.NewMockSetRepository(ctrl)
-			mockAuthService.EXPECT().VerifyToken(tt.ctx).Return(tt.userID, tt.verifyTokenErr).AnyTimes()
+			mockUserService.EXPECT().GetUser(tt.ctx).Return(tt.userID, tt.getUserErr).AnyTimes()
 
 			mockWorkout := mocksworkout.NewMockWorkout(ctrl)
 			mockWorkout.EXPECT().UserID().Return(user.UserID(tt.owner)).AnyTimes()
 			mockWorkoutRepository.EXPECT().FindByID(gomock.Any(), gomock.Any()).Return(mockWorkout, tt.findByIDErr).AnyTimes()
 			mockSetRepository.EXPECT().FindByWorkoutID(gomock.Any(), gomock.Any()).Return([]set.Set{}, tt.findByWorkoutErr).AnyTimes()
 
-			u := NewWorkoutUsecase(mockAuthService, mockWorkoutRepository, mockSetRepository)
+			u := NewWorkoutUsecase(mockUserService, mockWorkoutRepository, mockSetRepository)
 
 			_, _, err := u.GetWorkout(tt.ctx, id)
 			if tt.success && err != nil {
@@ -178,15 +178,15 @@ func TestGetWorkout(t *testing.T) {
 func TestListWorkouts(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name           string
-		success        bool
-		ctx            context.Context
-		userID         string
-		verifyTokenErr error
-		findErr        error
+		name       string
+		success    bool
+		ctx        context.Context
+		userID     string
+		getUserErr error
+		findErr    error
 	}{
 		{"success list workouts", true, context.Background(), "fe8c2263-bbac-4bb9-a41d-b04f5afc4425", nil, nil},
-		{"failure verify token error", false, context.Background(), "", fmt.Errorf("verify token error"), nil},
+		{"failure get user error", false, context.Background(), "", fmt.Errorf("get user error"), nil},
 		{"failure empty user id", false, context.Background(), "", nil, nil},
 		{"failure find error", false, context.Background(), "fe8c2263-bbac-4bb9-a41d-b04f5afc4425", nil, errors.New("find error")},
 	}
@@ -198,13 +198,13 @@ func TestListWorkouts(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockAuthService := mocksappauth.NewMockAuthService(ctrl)
+			mockUserService := mocksappuser.NewMockUserService(ctrl)
 			mockWorkoutRepository := mocksworkout.NewMockWorkoutRepository(ctrl)
 			mockSetRepository := mocksset.NewMockSetRepository(ctrl)
-			mockAuthService.EXPECT().VerifyToken(tt.ctx).Return(tt.userID, tt.verifyTokenErr).AnyTimes()
+			mockUserService.EXPECT().GetUser(tt.ctx).Return(tt.userID, tt.getUserErr).AnyTimes()
 			mockWorkoutRepository.EXPECT().FindByUserID(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]workout.Workout{}, tt.findErr).AnyTimes()
 
-			u := NewWorkoutUsecase(mockAuthService, mockWorkoutRepository, mockSetRepository)
+			u := NewWorkoutUsecase(mockUserService, mockWorkoutRepository, mockSetRepository)
 
 			_, err := u.ListWorkouts(tt.ctx, nil, nil)
 			if tt.success && err != nil {

@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	authv1 "github.com/qkitzero/auth-service/gen/go/auth/v1"
+	userv1 "github.com/qkitzero/user-service/gen/go/user/v1"
 	exercisev1 "github.com/qkitzero/workout-service/gen/go/exercise/v1"
 	musclev1 "github.com/qkitzero/workout-service/gen/go/muscle/v1"
 	setv1 "github.com/qkitzero/workout-service/gen/go/set/v1"
@@ -28,6 +29,7 @@ import (
 	appset "github.com/qkitzero/workout-service/internal/application/set"
 	appworkout "github.com/qkitzero/workout-service/internal/application/workout"
 	apiauth "github.com/qkitzero/workout-service/internal/infrastructure/api/auth"
+	apiuser "github.com/qkitzero/workout-service/internal/infrastructure/api/user"
 	"github.com/qkitzero/workout-service/internal/infrastructure/db"
 	infraexercise "github.com/qkitzero/workout-service/internal/infrastructure/exercise"
 	inframuscle "github.com/qkitzero/workout-service/internal/infrastructure/muscle"
@@ -52,6 +54,8 @@ type config struct {
 	DBSSLMode       string
 	AuthServiceHost string
 	AuthServicePort string
+	UserServiceHost string
+	UserServicePort string
 }
 
 func loadConfig() (config, error) {
@@ -73,6 +77,8 @@ func loadConfig() (config, error) {
 		{"DB_SSL_MODE", &cfg.DBSSLMode},
 		{"AUTH_SERVICE_HOST", &cfg.AuthServiceHost},
 		{"AUTH_SERVICE_PORT", &cfg.AuthServicePort},
+		{"USER_SERVICE_HOST", &cfg.UserServiceHost},
+		{"USER_SERVICE_PORT", &cfg.UserServicePort},
 	}
 	var missing []string
 	for _, r := range required {
@@ -124,23 +130,31 @@ func run() error {
 		dialOpt = grpc.WithTransportCredentials(insecure.NewCredentials())
 	}
 
-	conn, err := grpc.NewClient(cfg.AuthServiceHost+":"+cfg.AuthServicePort, dialOpt)
+	authConn, err := grpc.NewClient(cfg.AuthServiceHost+":"+cfg.AuthServicePort, dialOpt)
 	if err != nil {
 		return fmt.Errorf("auth client: %w", err)
 	}
-	defer func() { _ = conn.Close() }()
+	defer func() { _ = authConn.Close() }()
+
+	userConn, err := grpc.NewClient(cfg.UserServiceHost+":"+cfg.UserServicePort, dialOpt)
+	if err != nil {
+		return fmt.Errorf("user client: %w", err)
+	}
+	defer func() { _ = userConn.Close() }()
 
 	server := grpc.NewServer()
 
-	authServiceClient := authv1.NewAuthServiceClient(conn)
+	authServiceClient := authv1.NewAuthServiceClient(authConn)
+	userServiceClient := userv1.NewUserServiceClient(userConn)
 	setRepository := infraset.NewSetRepository(gormDB)
 	workoutRepository := infraworkout.NewWorkoutRepository(gormDB)
 	exerciseRepository := infraexercise.NewExerciseRepository(gormDB)
 	muscleRepository := inframuscle.NewMuscleRepository(gormDB)
 
-	authService := apiauth.NewAuthService(authServiceClient)
-	setUsecase := appset.NewSetUsecase(authService, setRepository, workoutRepository, exerciseRepository)
-	workoutUsecase := appworkout.NewWorkoutUsecase(authService, workoutRepository, setRepository)
+	_ = apiauth.NewAuthService(authServiceClient)
+	userService := apiuser.NewUserService(userServiceClient)
+	setUsecase := appset.NewSetUsecase(userService, setRepository, workoutRepository, exerciseRepository)
+	workoutUsecase := appworkout.NewWorkoutUsecase(userService, workoutRepository, setRepository)
 	exerciseUsecase := appexercise.NewExerciseUsecase(exerciseRepository)
 	muscleUsecase := appmuscle.NewMuscleUsecase(muscleRepository)
 

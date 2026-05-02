@@ -4,36 +4,39 @@ import (
 	"context"
 	"time"
 
-	"github.com/qkitzero/workout-service/internal/application/auth"
+	"github.com/qkitzero/workout-service/internal/application/user"
 	"github.com/qkitzero/workout-service/internal/domain/exercise"
 	"github.com/qkitzero/workout-service/internal/domain/set"
-	"github.com/qkitzero/workout-service/internal/domain/user"
+	domainuser "github.com/qkitzero/workout-service/internal/domain/user"
 	"github.com/qkitzero/workout-service/internal/domain/workout"
 )
 
 type SetUsecase interface {
 	CreateSet(ctx context.Context, workoutID workout.WorkoutID, exerciseID exercise.ExerciseID, rep set.Rep, weight set.Weight, trainedAt time.Time) (set.Set, error)
 	ListSets(ctx context.Context) ([]set.Set, error)
+	GetSet(ctx context.Context, id set.SetID) (set.Set, error)
+	UpdateSet(ctx context.Context, id set.SetID, exerciseID exercise.ExerciseID, rep set.Rep, weight set.Weight, trainedAt time.Time) (set.Set, error)
+	DeleteSet(ctx context.Context, id set.SetID) error
 }
 
 type setUsecase struct {
-	authService  auth.AuthService
+	userService  user.UserService
 	setRepo      set.SetRepository
 	workoutRepo  workout.WorkoutRepository
 	exerciseRepo exercise.ExerciseRepository
 }
 
-func NewSetUsecase(authService auth.AuthService, setRepo set.SetRepository, workoutRepo workout.WorkoutRepository, exerciseRepo exercise.ExerciseRepository) SetUsecase {
-	return &setUsecase{authService: authService, setRepo: setRepo, workoutRepo: workoutRepo, exerciseRepo: exerciseRepo}
+func NewSetUsecase(userService user.UserService, setRepo set.SetRepository, workoutRepo workout.WorkoutRepository, exerciseRepo exercise.ExerciseRepository) SetUsecase {
+	return &setUsecase{userService: userService, setRepo: setRepo, workoutRepo: workoutRepo, exerciseRepo: exerciseRepo}
 }
 
 func (u *setUsecase) CreateSet(ctx context.Context, workoutID workout.WorkoutID, exerciseID exercise.ExerciseID, rep set.Rep, weight set.Weight, trainedAt time.Time) (set.Set, error) {
-	userID, err := u.authService.VerifyToken(ctx)
+	userID, err := u.userService.GetUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	newUserID, err := user.NewUserID(userID)
+	newUserID, err := domainuser.NewUserID(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -67,12 +70,12 @@ func (u *setUsecase) CreateSet(ctx context.Context, workoutID workout.WorkoutID,
 }
 
 func (u *setUsecase) ListSets(ctx context.Context) ([]set.Set, error) {
-	userID, err := u.authService.VerifyToken(ctx)
+	userID, err := u.userService.GetUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	newUserID, err := user.NewUserID(userID)
+	newUserID, err := domainuser.NewUserID(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -83,4 +86,84 @@ func (u *setUsecase) ListSets(ctx context.Context) ([]set.Set, error) {
 	}
 
 	return sets, nil
+}
+
+func (u *setUsecase) GetSet(ctx context.Context, id set.SetID) (set.Set, error) {
+	userID, err := u.userService.GetUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	newUserID, err := domainuser.NewUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	s, err := u.setRepo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if s.UserID() != newUserID {
+		return nil, set.ErrSetForbidden
+	}
+
+	return s, nil
+}
+
+func (u *setUsecase) UpdateSet(ctx context.Context, id set.SetID, exerciseID exercise.ExerciseID, rep set.Rep, weight set.Weight, trainedAt time.Time) (set.Set, error) {
+	userID, err := u.userService.GetUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	newUserID, err := domainuser.NewUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	s, err := u.setRepo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if s.UserID() != newUserID {
+		return nil, set.ErrSetForbidden
+	}
+
+	exists, err := u.exerciseRepo.Exists(ctx, exerciseID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, exercise.ErrExerciseNotFound
+	}
+
+	updated := set.NewSet(s.ID(), s.UserID(), s.WorkoutID(), exerciseID, rep, weight, trainedAt, s.CreatedAt())
+
+	if err := u.setRepo.Update(ctx, updated); err != nil {
+		return nil, err
+	}
+
+	return updated, nil
+}
+
+func (u *setUsecase) DeleteSet(ctx context.Context, id set.SetID) error {
+	userID, err := u.userService.GetUser(ctx)
+	if err != nil {
+		return err
+	}
+
+	newUserID, err := domainuser.NewUserID(userID)
+	if err != nil {
+		return err
+	}
+
+	s, err := u.setRepo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if s.UserID() != newUserID {
+		return set.ErrSetForbidden
+	}
+
+	return u.setRepo.Delete(ctx, id)
 }

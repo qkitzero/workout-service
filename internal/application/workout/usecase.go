@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/qkitzero/workout-service/internal/application/auth"
+	"github.com/qkitzero/workout-service/internal/application/user"
 	"github.com/qkitzero/workout-service/internal/domain/set"
-	"github.com/qkitzero/workout-service/internal/domain/user"
+	domainuser "github.com/qkitzero/workout-service/internal/domain/user"
 	"github.com/qkitzero/workout-service/internal/domain/workout"
 )
 
@@ -18,22 +18,22 @@ type WorkoutUsecase interface {
 }
 
 type workoutUsecase struct {
-	authService auth.AuthService
+	userService user.UserService
 	workoutRepo workout.WorkoutRepository
 	setRepo     set.SetRepository
 }
 
-func NewWorkoutUsecase(authService auth.AuthService, workoutRepo workout.WorkoutRepository, setRepo set.SetRepository) WorkoutUsecase {
-	return &workoutUsecase{authService: authService, workoutRepo: workoutRepo, setRepo: setRepo}
+func NewWorkoutUsecase(userService user.UserService, workoutRepo workout.WorkoutRepository, setRepo set.SetRepository) WorkoutUsecase {
+	return &workoutUsecase{userService: userService, workoutRepo: workoutRepo, setRepo: setRepo}
 }
 
 func (u *workoutUsecase) StartWorkout(ctx context.Context) (workout.Workout, error) {
-	userID, err := u.authService.VerifyToken(ctx)
+	userID, err := u.userService.GetUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	newUserID, err := user.NewUserID(userID)
+	newUserID, err := domainuser.NewUserID(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,12 +49,12 @@ func (u *workoutUsecase) StartWorkout(ctx context.Context) (workout.Workout, err
 }
 
 func (u *workoutUsecase) FinishWorkout(ctx context.Context, id workout.WorkoutID) (workout.Workout, error) {
-	userID, err := u.authService.VerifyToken(ctx)
+	userID, err := u.userService.GetUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	newUserID, err := user.NewUserID(userID)
+	newUserID, err := domainuser.NewUserID(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -80,12 +80,12 @@ func (u *workoutUsecase) FinishWorkout(ctx context.Context, id workout.WorkoutID
 }
 
 func (u *workoutUsecase) GetWorkout(ctx context.Context, id workout.WorkoutID) (workout.Workout, []set.Set, error) {
-	userID, err := u.authService.VerifyToken(ctx)
+	userID, err := u.userService.GetUser(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	newUserID, err := user.NewUserID(userID)
+	newUserID, err := domainuser.NewUserID(userID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -107,12 +107,12 @@ func (u *workoutUsecase) GetWorkout(ctx context.Context, id workout.WorkoutID) (
 }
 
 func (u *workoutUsecase) ListWorkouts(ctx context.Context, from, to *time.Time) ([]workout.Workout, error) {
-	userID, err := u.authService.VerifyToken(ctx)
+	userID, err := u.userService.GetUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	newUserID, err := user.NewUserID(userID)
+	newUserID, err := domainuser.NewUserID(userID)
 	if err != nil {
 		return nil, err
 	}
