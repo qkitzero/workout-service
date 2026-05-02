@@ -129,6 +129,14 @@ func (u *setUsecase) UpdateSet(ctx context.Context, id set.SetID, exerciseID exe
 		return nil, set.ErrSetForbidden
 	}
 
+	w, err := u.workoutRepo.FindByID(ctx, s.WorkoutID())
+	if err != nil {
+		return nil, err
+	}
+	if w.IsFinished() {
+		return nil, workout.ErrWorkoutAlreadyFinished
+	}
+
 	exists, err := u.exerciseRepo.Exists(ctx, exerciseID)
 	if err != nil {
 		return nil, err
@@ -163,6 +171,14 @@ func (u *setUsecase) DeleteSet(ctx context.Context, id set.SetID) error {
 	}
 	if s.UserID() != newUserID {
 		return set.ErrSetForbidden
+	}
+
+	w, err := u.workoutRepo.FindByID(ctx, s.WorkoutID())
+	if err != nil {
+		return err
+	}
+	if w.IsFinished() {
+		return workout.ErrWorkoutAlreadyFinished
 	}
 
 	return u.setRepo.Delete(ctx, id)

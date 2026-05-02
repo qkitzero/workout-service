@@ -150,25 +150,29 @@ func TestUpdateSet(t *testing.T) {
 	trainedAt := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		name         string
-		success      bool
-		ctx          context.Context
-		userID       string
-		getUserErr   error
-		setOwner     string
-		findByIDErr  error
-		existsResult bool
-		existsErr    error
-		updateErr    error
+		name           string
+		success        bool
+		ctx            context.Context
+		userID         string
+		getUserErr     error
+		setOwner       string
+		findByIDErr    error
+		workoutFinish  bool
+		findWorkoutErr error
+		existsResult   bool
+		existsErr      error
+		updateErr      error
 	}{
-		{"success update set", true, context.Background(), validUserID, nil, validUserID, nil, true, nil, nil},
-		{"failure get user error", false, context.Background(), "", fmt.Errorf("get user error"), "", nil, false, nil, nil},
-		{"failure empty user id", false, context.Background(), "", nil, "", nil, false, nil, nil},
-		{"failure set not found", false, context.Background(), validUserID, nil, "", set.ErrSetNotFound, false, nil, nil},
-		{"failure set forbidden", false, context.Background(), validUserID, nil, otherUserID, nil, false, nil, nil},
-		{"failure exercise not found", false, context.Background(), validUserID, nil, validUserID, nil, false, nil, nil},
-		{"failure exists error", false, context.Background(), validUserID, nil, validUserID, nil, false, errors.New("exists error"), nil},
-		{"failure update error", false, context.Background(), validUserID, nil, validUserID, nil, true, nil, errors.New("update error")},
+		{"success update set", true, context.Background(), validUserID, nil, validUserID, nil, false, nil, true, nil, nil},
+		{"failure get user error", false, context.Background(), "", fmt.Errorf("get user error"), "", nil, false, nil, false, nil, nil},
+		{"failure empty user id", false, context.Background(), "", nil, "", nil, false, nil, false, nil, nil},
+		{"failure set not found", false, context.Background(), validUserID, nil, "", set.ErrSetNotFound, false, nil, false, nil, nil},
+		{"failure set forbidden", false, context.Background(), validUserID, nil, otherUserID, nil, false, nil, false, nil, nil},
+		{"failure workout not found", false, context.Background(), validUserID, nil, validUserID, nil, false, workout.ErrWorkoutNotFound, false, nil, nil},
+		{"failure workout already finished", false, context.Background(), validUserID, nil, validUserID, nil, true, nil, false, nil, nil},
+		{"failure exercise not found", false, context.Background(), validUserID, nil, validUserID, nil, false, nil, false, nil, nil},
+		{"failure exists error", false, context.Background(), validUserID, nil, validUserID, nil, false, nil, false, errors.New("exists error"), nil},
+		{"failure update error", false, context.Background(), validUserID, nil, validUserID, nil, false, nil, true, nil, errors.New("update error")},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -190,6 +194,10 @@ func TestUpdateSet(t *testing.T) {
 			mockSet.EXPECT().WorkoutID().Return(workout.NewWorkoutID()).AnyTimes()
 			mockSet.EXPECT().CreatedAt().Return(time.Now()).AnyTimes()
 			mockSetRepository.EXPECT().FindByID(gomock.Any(), gomock.Any()).Return(mockSet, tt.findByIDErr).AnyTimes()
+
+			mockWorkout := mocksworkout.NewMockWorkout(ctrl)
+			mockWorkout.EXPECT().IsFinished().Return(tt.workoutFinish).AnyTimes()
+			mockWorkoutRepository.EXPECT().FindByID(gomock.Any(), gomock.Any()).Return(mockWorkout, tt.findWorkoutErr).AnyTimes()
 
 			mockExerciseRepository.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(tt.existsResult, tt.existsErr).AnyTimes()
 			mockSetRepository.EXPECT().Update(gomock.Any(), gomock.Any()).Return(tt.updateErr).AnyTimes()
@@ -214,21 +222,25 @@ func TestDeleteSet(t *testing.T) {
 	setID := set.NewSetID()
 
 	tests := []struct {
-		name        string
-		success     bool
-		ctx         context.Context
-		userID      string
-		getUserErr  error
-		setOwner    string
-		findByIDErr error
-		deleteErr   error
+		name           string
+		success        bool
+		ctx            context.Context
+		userID         string
+		getUserErr     error
+		setOwner       string
+		findByIDErr    error
+		workoutFinish  bool
+		findWorkoutErr error
+		deleteErr      error
 	}{
-		{"success delete set", true, context.Background(), validUserID, nil, validUserID, nil, nil},
-		{"failure get user error", false, context.Background(), "", fmt.Errorf("get user error"), "", nil, nil},
-		{"failure empty user id", false, context.Background(), "", nil, "", nil, nil},
-		{"failure set not found", false, context.Background(), validUserID, nil, "", set.ErrSetNotFound, nil},
-		{"failure set forbidden", false, context.Background(), validUserID, nil, otherUserID, nil, nil},
-		{"failure delete error", false, context.Background(), validUserID, nil, validUserID, nil, errors.New("delete error")},
+		{"success delete set", true, context.Background(), validUserID, nil, validUserID, nil, false, nil, nil},
+		{"failure get user error", false, context.Background(), "", fmt.Errorf("get user error"), "", nil, false, nil, nil},
+		{"failure empty user id", false, context.Background(), "", nil, "", nil, false, nil, nil},
+		{"failure set not found", false, context.Background(), validUserID, nil, "", set.ErrSetNotFound, false, nil, nil},
+		{"failure set forbidden", false, context.Background(), validUserID, nil, otherUserID, nil, false, nil, nil},
+		{"failure workout not found", false, context.Background(), validUserID, nil, validUserID, nil, false, workout.ErrWorkoutNotFound, nil},
+		{"failure workout already finished", false, context.Background(), validUserID, nil, validUserID, nil, true, nil, nil},
+		{"failure delete error", false, context.Background(), validUserID, nil, validUserID, nil, false, nil, errors.New("delete error")},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -246,8 +258,13 @@ func TestDeleteSet(t *testing.T) {
 
 			mockSet := mocksset.NewMockSet(ctrl)
 			mockSet.EXPECT().UserID().Return(user.UserID(tt.setOwner)).AnyTimes()
+			mockSet.EXPECT().WorkoutID().Return(workout.NewWorkoutID()).AnyTimes()
 			mockSetRepository.EXPECT().FindByID(gomock.Any(), gomock.Any()).Return(mockSet, tt.findByIDErr).AnyTimes()
 			mockSetRepository.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(tt.deleteErr).AnyTimes()
+
+			mockWorkout := mocksworkout.NewMockWorkout(ctrl)
+			mockWorkout.EXPECT().IsFinished().Return(tt.workoutFinish).AnyTimes()
+			mockWorkoutRepository.EXPECT().FindByID(gomock.Any(), gomock.Any()).Return(mockWorkout, tt.findWorkoutErr).AnyTimes()
 
 			u := NewSetUsecase(mockUserService, mockSetRepository, mockWorkoutRepository, mockExerciseRepository)
 

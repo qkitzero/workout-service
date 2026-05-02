@@ -159,6 +159,10 @@ func (h *SetHandler) UpdateSet(ctx context.Context, req *setv1.UpdateSetRequest)
 			return nil, status.Error(codes.NotFound, err.Error())
 		case errors.Is(err, set.ErrSetForbidden):
 			return nil, status.Error(codes.PermissionDenied, err.Error())
+		case errors.Is(err, workout.ErrWorkoutNotFound):
+			return nil, status.Error(codes.NotFound, err.Error())
+		case errors.Is(err, workout.ErrWorkoutAlreadyFinished):
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
 		case errors.Is(err, exercise.ErrExerciseNotFound):
 			return nil, status.Error(codes.NotFound, err.Error())
 		}
@@ -194,6 +198,10 @@ func (h *SetHandler) DeleteSet(ctx context.Context, req *setv1.DeleteSetRequest)
 			return nil, status.Error(codes.NotFound, err.Error())
 		case errors.Is(err, set.ErrSetForbidden):
 			return nil, status.Error(codes.PermissionDenied, err.Error())
+		case errors.Is(err, workout.ErrWorkoutNotFound):
+			return nil, status.Error(codes.NotFound, err.Error())
+		case errors.Is(err, workout.ErrWorkoutAlreadyFinished):
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
 		}
 		log.Printf("DeleteSet: internal error: %v", err)
 		return nil, status.Error(codes.Internal, "internal error")

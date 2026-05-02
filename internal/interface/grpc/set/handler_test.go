@@ -171,6 +171,8 @@ func TestUpdateSet(t *testing.T) {
 		{"failure negative weight", context.Background(), validSetID, validExerciseID, 10, -1.0, false, nil, codes.InvalidArgument},
 		{"failure set not found", context.Background(), validSetID, validExerciseID, 10, 60.0, true, set.ErrSetNotFound, codes.NotFound},
 		{"failure set forbidden", context.Background(), validSetID, validExerciseID, 10, 60.0, true, set.ErrSetForbidden, codes.PermissionDenied},
+		{"failure workout not found", context.Background(), validSetID, validExerciseID, 10, 60.0, true, workout.ErrWorkoutNotFound, codes.NotFound},
+		{"failure workout already finished", context.Background(), validSetID, validExerciseID, 10, 60.0, true, workout.ErrWorkoutAlreadyFinished, codes.FailedPrecondition},
 		{"failure exercise not found", context.Background(), validSetID, validExerciseID, 10, 60.0, true, exercise.ErrExerciseNotFound, codes.NotFound},
 		{"failure usecase error", context.Background(), validSetID, validExerciseID, 10, 60.0, true, fmt.Errorf("update set error"), codes.Internal},
 		{"failure status preserved", context.Background(), validSetID, validExerciseID, 10, 60.0, true, status.Error(codes.Unauthenticated, "auth"), codes.Unauthenticated},
@@ -222,6 +224,8 @@ func TestDeleteSet(t *testing.T) {
 		{"failure invalid set id", context.Background(), "not-a-uuid", false, nil, codes.InvalidArgument},
 		{"failure set not found", context.Background(), validSetID, true, set.ErrSetNotFound, codes.NotFound},
 		{"failure set forbidden", context.Background(), validSetID, true, set.ErrSetForbidden, codes.PermissionDenied},
+		{"failure workout not found", context.Background(), validSetID, true, workout.ErrWorkoutNotFound, codes.NotFound},
+		{"failure workout already finished", context.Background(), validSetID, true, workout.ErrWorkoutAlreadyFinished, codes.FailedPrecondition},
 		{"failure usecase error", context.Background(), validSetID, true, fmt.Errorf("delete set error"), codes.Internal},
 		{"failure status preserved", context.Background(), validSetID, true, status.Error(codes.Unauthenticated, "auth"), codes.Unauthenticated},
 	}
