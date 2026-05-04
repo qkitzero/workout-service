@@ -53,10 +53,16 @@ message CreateSetResponse {
   string set_id = 1;
 }
 
-message ListSetsRequest {}
+message ListSetsRequest {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
 
 message ListSetsResponse {
   repeated Set sets = 1;
+  string next_page_token = 2;
 }
 
 message GetSetRequest {

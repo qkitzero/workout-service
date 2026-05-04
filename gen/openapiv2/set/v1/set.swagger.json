@@ -33,6 +33,35 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
         "tags": [
           "SetService"
         ]
@@ -263,6 +292,9 @@
             "type": "object",
             "$ref": "#/definitions/v1Set"
           }
+        },
+        "nextPageToken": {
+          "type": "string"
         }
       }
     },
