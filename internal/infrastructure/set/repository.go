@@ -3,6 +3,7 @@ package set
 import (
 	"context"
 	"errors"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -81,9 +82,32 @@ func (r *setRepository) FindByID(ctx context.Context, id set.SetID) (set.Set, er
 	return set.NewSet(m.ID, m.UserID, m.WorkoutID, m.ExerciseID, m.Rep, m.Weight, m.TrainedAt, m.CreatedAt), nil
 }
 
-func (r *setRepository) FindByUserID(ctx context.Context, userID user.UserID) ([]set.Set, error) {
+func (r *setRepository) FindByUserID(
+	ctx context.Context,
+	userID user.UserID,
+	from, to *time.Time,
+	limit int,
+	cursorTrainedAt *time.Time,
+	cursorSetID *set.SetID,
+) ([]set.Set, error) {
+	q := r.db.WithContext(ctx).Where("user_id = ?", userID)
+	if from != nil {
+		q = q.Where("trained_at >= ?", *from)
+	}
+	if to != nil {
+		q = q.Where("trained_at < ?", *to)
+	}
+	if cursorTrainedAt != nil && cursorSetID != nil {
+		q = q.Where("(trained_at, id) < (?, ?)", *cursorTrainedAt, *cursorSetID)
+	}
+
+	q = q.Order("trained_at DESC").Order("id DESC")
+	if limit > 0 {
+		q = q.Limit(limit)
+	}
+
 	var setModels []SetModel
-	if err := r.db.WithContext(ctx).Where("user_id = ?", userID).Find(&setModels).Error; err != nil {
+	if err := q.Find(&setModels).Error; err != nil {
 		return nil, err
 	}
 

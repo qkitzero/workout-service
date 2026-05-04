@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	setv1 "github.com/qkitzero/workout-service/gen/go/set/v1"
+	"github.com/qkitzero/workout-service/internal/application/paging"
 	"github.com/qkitzero/workout-service/internal/domain/exercise"
 	"github.com/qkitzero/workout-service/internal/domain/set"
 	"github.com/qkitzero/workout-service/internal/domain/workout"
@@ -254,6 +255,9 @@ func TestDeleteSet(t *testing.T) {
 
 func TestListSets(t *testing.T) {
 	t.Parallel()
+	validFrom := timestamppb.New(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC))
+	validTo := timestamppb.New(time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC))
+	invalidTo := timestamppb.New(time.Date(2023, 12, 31, 0, 0, 0, 0, time.UTC))
 
 	mockSetSample := func(ctrl *gomock.Controller) *mocksset.MockSet {
 		m := mocksset.NewMockSet(ctrl)
@@ -270,12 +274,17 @@ func TestListSets(t *testing.T) {
 	tests := []struct {
 		name        string
 		ctx         context.Context
+		req         *setv1.ListSetsRequest
+		callUsecase bool
 		listSetsErr error
 		wantCode    codes.Code
 	}{
-		{"success list sets", context.Background(), nil, codes.OK},
-		{"failure list sets error", context.Background(), fmt.Errorf("list sets error"), codes.Internal},
-		{"failure status preserved", context.Background(), status.Error(codes.Unauthenticated, "auth"), codes.Unauthenticated},
+		{"success list sets", context.Background(), &setv1.ListSetsRequest{}, true, nil, codes.OK},
+		{"success with filters", context.Background(), &setv1.ListSetsRequest{From: validFrom, To: validTo, PageSize: 20}, true, nil, codes.OK},
+		{"failure invalid from/to order", context.Background(), &setv1.ListSetsRequest{From: validFrom, To: invalidTo}, false, nil, codes.InvalidArgument},
+		{"failure invalid page token", context.Background(), &setv1.ListSetsRequest{PageToken: "garbage"}, true, paging.ErrInvalidPageToken, codes.InvalidArgument},
+		{"failure list sets error", context.Background(), &setv1.ListSetsRequest{}, true, fmt.Errorf("list sets error"), codes.Internal},
+		{"failure status preserved", context.Background(), &setv1.ListSetsRequest{}, true, status.Error(codes.Unauthenticated, "auth"), codes.Unauthenticated},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -286,11 +295,13 @@ func TestListSets(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockUsecase := mocksappset.NewMockSetUsecase(ctrl)
-			mockUsecase.EXPECT().ListSets(tt.ctx).Return([]set.Set{mockSetSample(ctrl)}, tt.listSetsErr).Times(1)
+			if tt.callUsecase {
+				mockUsecase.EXPECT().ListSets(tt.ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]set.Set{mockSetSample(ctrl)}, "", tt.listSetsErr).Times(1)
+			}
 
 			handler := NewSetHandler(mockUsecase)
 
-			_, err := handler.ListSets(tt.ctx, &setv1.ListSetsRequest{})
+			_, err := handler.ListSets(tt.ctx, tt.req)
 			if got := status.Code(err); got != tt.wantCode {
 				t.Errorf("expected code %v, got %v (err=%v)", tt.wantCode, got, err)
 			}

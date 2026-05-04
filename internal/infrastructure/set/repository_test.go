@@ -314,43 +314,52 @@ func TestFindByID(t *testing.T) {
 
 func TestFindByUserID(t *testing.T) {
 	t.Parallel()
+	uid := user.UserID("fe8c2263-bbac-4bb9-a41d-b04f5afc4425")
+	from := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+	to := time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC)
+	cTrainedAt := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	cSetID := set.SetID{UUID: uuid.New()}
+
 	tests := []struct {
-		name    string
-		success bool
-		userID  user.UserID
-		setup   func(mock sqlmock.Sqlmock, userID user.UserID)
+		name            string
+		success         bool
+		from, to        *time.Time
+		cursorTrainedAt *time.Time
+		cursorSetID     *set.SetID
+		setup           func(mock sqlmock.Sqlmock)
 	}{
 		{
-			name:    "success find sets by user id",
+			name:    "success no filters",
 			success: true,
-			userID:  user.UserID("fe8c2263-bbac-4bb9-a41d-b04f5afc4425"),
-			setup: func(mock sqlmock.Sqlmock, userID user.UserID) {
+			setup: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"id", "user_id", "workout_id", "exercise_id", "rep", "weight", "trained_at", "created_at"}).
-					AddRow(uuid.New().String(), userID, uuid.New().String(), "f1f538e5-4a37-409c-be99-09ee7bfefc50", 10, 60.0, time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC), time.Now())
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sets" WHERE user_id = $1`)).
-					WithArgs(userID).
+					AddRow(uuid.New().String(), uid, uuid.New().String(), "f1f538e5-4a37-409c-be99-09ee7bfefc50", 10, 60.0, time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC), time.Now())
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sets" WHERE user_id = $1 ORDER BY trained_at DESC,id DESC LIMIT $2`)).
+					WithArgs(uid, 11).
 					WillReturnRows(rows)
 			},
 		},
 		{
-			name:    "success find sets empty result",
-			success: true,
-			userID:  user.UserID("fe8c2263-bbac-4bb9-a41d-b04f5afc4425"),
-			setup: func(mock sqlmock.Sqlmock, userID user.UserID) {
+			name:            "success with from/to and cursor",
+			success:         true,
+			from:            &from,
+			to:              &to,
+			cursorTrainedAt: &cTrainedAt,
+			cursorSetID:     &cSetID,
+			setup: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"id", "user_id", "workout_id", "exercise_id", "rep", "weight", "trained_at", "created_at"})
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sets" WHERE user_id = $1`)).
-					WithArgs(userID).
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sets" WHERE user_id = $1 AND trained_at >= $2 AND trained_at < $3 AND (trained_at, id) < ($4, $5) ORDER BY trained_at DESC,id DESC LIMIT $6`)).
+					WithArgs(uid, from, to, cTrainedAt, cSetID, 11).
 					WillReturnRows(rows)
 			},
 		},
 		{
-			name:    "failure find sets error",
+			name:    "failure db error",
 			success: false,
-			userID:  user.UserID("fe8c2263-bbac-4bb9-a41d-b04f5afc4425"),
-			setup: func(mock sqlmock.Sqlmock, userID user.UserID) {
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sets" WHERE user_id = $1`)).
-					WithArgs(userID).
-					WillReturnError(errors.New("find sets error"))
+			setup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sets" WHERE user_id = $1 ORDER BY trained_at DESC,id DESC LIMIT $2`)).
+					WithArgs(uid, 11).
+					WillReturnError(errors.New("db error"))
 			},
 		},
 	}
@@ -361,26 +370,23 @@ func TestFindByUserID(t *testing.T) {
 
 			sqlDB, mock, err := sqlmock.New()
 			if err != nil {
-				t.Errorf("failed to new sqlmock: %s", err)
+				t.Fatalf("failed to new sqlmock: %s", err)
 			}
-
 			gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: sqlDB}), &gorm.Config{})
 			if err != nil {
-				t.Errorf("failed to open gorm: %s", err)
+				t.Fatalf("failed to open gorm: %s", err)
 			}
 
-			tt.setup(mock, tt.userID)
+			tt.setup(mock)
 
 			repo := NewSetRepository(gormDB)
-
-			_, err = repo.FindByUserID(context.Background(), tt.userID)
+			_, err = repo.FindByUserID(context.Background(), uid, tt.from, tt.to, 11, tt.cursorTrainedAt, tt.cursorSetID)
 			if tt.success && err != nil {
 				t.Errorf("expected no error, but got %v", err)
 			}
 			if !tt.success && err == nil {
 				t.Errorf("expected error, but got nil")
 			}
-
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("there were unfulfilled expectations: %s", err)
 			}

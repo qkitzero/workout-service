@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"log"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	setv1 "github.com/qkitzero/workout-service/gen/go/set/v1"
+	"github.com/qkitzero/workout-service/internal/application/paging"
 	appset "github.com/qkitzero/workout-service/internal/application/set"
 	"github.com/qkitzero/workout-service/internal/domain/exercise"
 	"github.com/qkitzero/workout-service/internal/domain/set"
@@ -70,10 +72,26 @@ func (h *SetHandler) CreateSet(ctx context.Context, req *setv1.CreateSetRequest)
 }
 
 func (h *SetHandler) ListSets(ctx context.Context, req *setv1.ListSetsRequest) (*setv1.ListSetsResponse, error) {
-	sets, err := h.setUsecase.ListSets(ctx)
+	var from, to *time.Time
+	if req.GetFrom() != nil {
+		t := req.GetFrom().AsTime()
+		from = &t
+	}
+	if req.GetTo() != nil {
+		t := req.GetTo().AsTime()
+		to = &t
+	}
+	if from != nil && to != nil && !from.Before(*to) {
+		return nil, status.Error(codes.InvalidArgument, "from must be earlier than to")
+	}
+
+	sets, nextToken, err := h.setUsecase.ListSets(ctx, from, to, int(req.GetPageSize()), req.GetPageToken())
 	if err != nil {
 		if _, ok := status.FromError(err); ok {
 			return nil, err
+		}
+		if errors.Is(err, paging.ErrInvalidPageToken) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		log.Printf("ListSets: internal error: %v", err)
 		return nil, status.Error(codes.Internal, "internal error")
@@ -93,7 +111,8 @@ func (h *SetHandler) ListSets(ctx context.Context, req *setv1.ListSetsRequest) (
 	}
 
 	return &setv1.ListSetsResponse{
-		Sets: responses,
+		Sets:          responses,
+		NextPageToken: nextToken,
 	}, nil
 }
 
