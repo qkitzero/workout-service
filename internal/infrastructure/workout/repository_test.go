@@ -239,137 +239,140 @@ func TestFindByID(t *testing.T) {
 func TestFindByUserID(t *testing.T) {
 	t.Parallel()
 	uid := user.UserID("fe8c2263-bbac-4bb9-a41d-b04f5afc4425")
+	from := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+	to := time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC)
 
-	t.Run("success no filters", func(t *testing.T) {
-		t.Parallel()
-		sqlDB, mock, err := sqlmock.New()
-		if err != nil {
-			t.Fatalf("failed to new sqlmock: %s", err)
-		}
-		gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: sqlDB}), &gorm.Config{})
-		if err != nil {
-			t.Fatalf("failed to open gorm: %s", err)
-		}
+	tests := []struct {
+		name     string
+		success  bool
+		from, to *time.Time
+		setup    func(mock sqlmock.Sqlmock)
+	}{
+		{
+			name:    "success no filters",
+			success: true,
+			setup: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"id", "user_id", "started_at", "finished_at", "created_at"}).
+					AddRow(uuid.New().String(), uid, time.Now(), nil, time.Now())
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "workouts" WHERE user_id = $1`)).
+					WithArgs(uid).
+					WillReturnRows(rows)
+			},
+		},
+		{
+			name:    "success with from/to",
+			success: true,
+			from:    &from,
+			to:      &to,
+			setup: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"id", "user_id", "started_at", "finished_at", "created_at"})
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "workouts" WHERE user_id = $1 AND started_at >= $2 AND started_at < $3`)).
+					WithArgs(uid, from, to).
+					WillReturnRows(rows)
+			},
+		},
+		{
+			name:    "failure db error",
+			success: false,
+			setup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "workouts" WHERE user_id = $1`)).
+					WithArgs(uid).
+					WillReturnError(errors.New("db error"))
+			},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-		rows := sqlmock.NewRows([]string{"id", "user_id", "started_at", "finished_at", "created_at"}).
-			AddRow(uuid.New().String(), uid, time.Now(), nil, time.Now())
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "workouts" WHERE user_id = $1`)).
-			WithArgs(uid).
-			WillReturnRows(rows)
+			sqlDB, mock, err := sqlmock.New()
+			if err != nil {
+				t.Fatalf("failed to new sqlmock: %s", err)
+			}
+			gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: sqlDB}), &gorm.Config{})
+			if err != nil {
+				t.Fatalf("failed to open gorm: %s", err)
+			}
 
-		repo := NewWorkoutRepository(gormDB)
-		_, err = repo.FindByUserID(context.Background(), uid, nil, nil)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-		if err := mock.ExpectationsWereMet(); err != nil {
-			t.Errorf("there were unfulfilled expectations: %s", err)
-		}
-	})
+			tt.setup(mock)
 
-	t.Run("success with from/to", func(t *testing.T) {
-		t.Parallel()
-		sqlDB, mock, err := sqlmock.New()
-		if err != nil {
-			t.Fatalf("failed to new sqlmock: %s", err)
-		}
-		gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: sqlDB}), &gorm.Config{})
-		if err != nil {
-			t.Fatalf("failed to open gorm: %s", err)
-		}
-
-		from := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
-		to := time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC)
-		rows := sqlmock.NewRows([]string{"id", "user_id", "started_at", "finished_at", "created_at"})
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "workouts" WHERE user_id = $1 AND started_at >= $2 AND started_at < $3`)).
-			WithArgs(uid, from, to).
-			WillReturnRows(rows)
-
-		repo := NewWorkoutRepository(gormDB)
-		_, err = repo.FindByUserID(context.Background(), uid, &from, &to)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-		if err := mock.ExpectationsWereMet(); err != nil {
-			t.Errorf("there were unfulfilled expectations: %s", err)
-		}
-	})
-
-	t.Run("failure db error", func(t *testing.T) {
-		t.Parallel()
-		sqlDB, mock, err := sqlmock.New()
-		if err != nil {
-			t.Fatalf("failed to new sqlmock: %s", err)
-		}
-		gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: sqlDB}), &gorm.Config{})
-		if err != nil {
-			t.Fatalf("failed to open gorm: %s", err)
-		}
-
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "workouts" WHERE user_id = $1`)).
-			WithArgs(uid).
-			WillReturnError(errors.New("db error"))
-
-		repo := NewWorkoutRepository(gormDB)
-		_, err = repo.FindByUserID(context.Background(), uid, nil, nil)
-		if err == nil {
-			t.Errorf("expected error, got nil")
-		}
-		if err := mock.ExpectationsWereMet(); err != nil {
-			t.Errorf("there were unfulfilled expectations: %s", err)
-		}
-	})
+			repo := NewWorkoutRepository(gormDB)
+			_, err = repo.FindByUserID(context.Background(), uid, tt.from, tt.to)
+			if tt.success && err != nil {
+				t.Errorf("expected no error, but got %v", err)
+			}
+			if !tt.success && err == nil {
+				t.Errorf("expected error, but got nil")
+			}
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("there were unfulfilled expectations: %s", err)
+			}
+		})
+	}
 }
 
 func TestExists(t *testing.T) {
 	t.Parallel()
 	id := workout.WorkoutID{UUID: uuid.New()}
 
-	t.Run("success exists", func(t *testing.T) {
-		t.Parallel()
-		sqlDB, mock, err := sqlmock.New()
-		if err != nil {
-			t.Fatalf("failed to new sqlmock: %s", err)
-		}
-		gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: sqlDB}), &gorm.Config{})
-		if err != nil {
-			t.Fatalf("failed to open gorm: %s", err)
-		}
+	tests := []struct {
+		name    string
+		success bool
+		want    bool
+		setup   func(mock sqlmock.Sqlmock)
+	}{
+		{
+			name:    "success exists",
+			success: true,
+			want:    true,
+			setup: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "workouts" WHERE id = $1`)).
+					WithArgs(id).
+					WillReturnRows(rows)
+			},
+		},
+		{
+			name:    "failure exists error",
+			success: false,
+			setup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "workouts" WHERE id = $1`)).
+					WithArgs(id).
+					WillReturnError(errors.New("db error"))
+			},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-		rows := sqlmock.NewRows([]string{"count"}).AddRow(1)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "workouts" WHERE id = $1`)).
-			WithArgs(id).
-			WillReturnRows(rows)
+			sqlDB, mock, err := sqlmock.New()
+			if err != nil {
+				t.Fatalf("failed to new sqlmock: %s", err)
+			}
+			gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: sqlDB}), &gorm.Config{})
+			if err != nil {
+				t.Fatalf("failed to open gorm: %s", err)
+			}
 
-		repo := NewWorkoutRepository(gormDB)
-		ok, err := repo.Exists(context.Background(), id)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-		if !ok {
-			t.Errorf("expected exists=true")
-		}
-	})
+			tt.setup(mock)
 
-	t.Run("failure exists error", func(t *testing.T) {
-		t.Parallel()
-		sqlDB, mock, err := sqlmock.New()
-		if err != nil {
-			t.Fatalf("failed to new sqlmock: %s", err)
-		}
-		gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: sqlDB}), &gorm.Config{})
-		if err != nil {
-			t.Fatalf("failed to open gorm: %s", err)
-		}
-
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "workouts" WHERE id = $1`)).
-			WithArgs(id).
-			WillReturnError(errors.New("db error"))
-
-		repo := NewWorkoutRepository(gormDB)
-		_, err = repo.Exists(context.Background(), id)
-		if err == nil {
-			t.Errorf("expected error, got nil")
-		}
-	})
+			repo := NewWorkoutRepository(gormDB)
+			got, err := repo.Exists(context.Background(), id)
+			if tt.success && err != nil {
+				t.Errorf("expected no error, but got %v", err)
+			}
+			if !tt.success && err == nil {
+				t.Errorf("expected error, but got nil")
+			}
+			if tt.success && got != tt.want {
+				t.Errorf("expected exists=%v, got %v", tt.want, got)
+			}
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("there were unfulfilled expectations: %s", err)
+			}
+		})
+	}
 }
