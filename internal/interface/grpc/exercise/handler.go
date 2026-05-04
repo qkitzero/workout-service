@@ -2,6 +2,7 @@ package exercise
 
 import (
 	"context"
+	"log"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -37,7 +38,8 @@ func (h *ExerciseHandler) ListExercises(ctx context.Context, req *exercisev1.Lis
 		if _, ok := status.FromError(err); ok {
 			return nil, err
 		}
-		return nil, status.Error(codes.Internal, err.Error())
+		log.Printf("ListExercises: internal error: %v", err)
+		return nil, status.Error(codes.Internal, "internal error")
 	}
 
 	responses := make([]*exercisev1.Exercise, 0, len(exercises))

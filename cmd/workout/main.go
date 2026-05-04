@@ -19,20 +19,26 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	authv1 "github.com/qkitzero/auth-service/gen/go/auth/v1"
+	userv1 "github.com/qkitzero/user-service/gen/go/user/v1"
 	exercisev1 "github.com/qkitzero/workout-service/gen/go/exercise/v1"
 	musclev1 "github.com/qkitzero/workout-service/gen/go/muscle/v1"
 	setv1 "github.com/qkitzero/workout-service/gen/go/set/v1"
+	workoutv1 "github.com/qkitzero/workout-service/gen/go/workout/v1"
 	appexercise "github.com/qkitzero/workout-service/internal/application/exercise"
 	appmuscle "github.com/qkitzero/workout-service/internal/application/muscle"
 	appset "github.com/qkitzero/workout-service/internal/application/set"
+	appworkout "github.com/qkitzero/workout-service/internal/application/workout"
 	apiauth "github.com/qkitzero/workout-service/internal/infrastructure/api/auth"
+	apiuser "github.com/qkitzero/workout-service/internal/infrastructure/api/user"
 	"github.com/qkitzero/workout-service/internal/infrastructure/db"
 	infraexercise "github.com/qkitzero/workout-service/internal/infrastructure/exercise"
 	inframuscle "github.com/qkitzero/workout-service/internal/infrastructure/muscle"
 	infraset "github.com/qkitzero/workout-service/internal/infrastructure/set"
+	infraworkout "github.com/qkitzero/workout-service/internal/infrastructure/workout"
 	grpcexercise "github.com/qkitzero/workout-service/internal/interface/grpc/exercise"
 	grpcmuscle "github.com/qkitzero/workout-service/internal/interface/grpc/muscle"
 	grpcset "github.com/qkitzero/workout-service/internal/interface/grpc/set"
+	grpcworkout "github.com/qkitzero/workout-service/internal/interface/grpc/workout"
 )
 
 const shutdownTimeout = 15 * time.Second
@@ -48,6 +54,8 @@ type config struct {
 	DBSSLMode       string
 	AuthServiceHost string
 	AuthServicePort string
+	UserServiceHost string
+	UserServicePort string
 }
 
 func loadConfig() (config, error) {
@@ -69,6 +77,8 @@ func loadConfig() (config, error) {
 		{"DB_SSL_MODE", &cfg.DBSSLMode},
 		{"AUTH_SERVICE_HOST", &cfg.AuthServiceHost},
 		{"AUTH_SERVICE_PORT", &cfg.AuthServicePort},
+		{"USER_SERVICE_HOST", &cfg.UserServiceHost},
+		{"USER_SERVICE_PORT", &cfg.UserServicePort},
 	}
 	var missing []string
 	for _, r := range required {
@@ -105,7 +115,7 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("db handle: %w", err)
 	}
-	defer sqlDB.Close()
+	defer func() { _ = sqlDB.Close() }()
 
 	listener, err := net.Listen("tcp", ":"+cfg.Port)
 	if err != nil {
@@ -120,36 +130,49 @@ func run() error {
 		dialOpt = grpc.WithTransportCredentials(insecure.NewCredentials())
 	}
 
-	conn, err := grpc.NewClient(cfg.AuthServiceHost+":"+cfg.AuthServicePort, dialOpt)
+	authConn, err := grpc.NewClient(cfg.AuthServiceHost+":"+cfg.AuthServicePort, dialOpt)
 	if err != nil {
 		return fmt.Errorf("auth client: %w", err)
 	}
-	defer conn.Close()
+	defer func() { _ = authConn.Close() }()
+
+	userConn, err := grpc.NewClient(cfg.UserServiceHost+":"+cfg.UserServicePort, dialOpt)
+	if err != nil {
+		return fmt.Errorf("user client: %w", err)
+	}
+	defer func() { _ = userConn.Close() }()
 
 	server := grpc.NewServer()
 
-	authServiceClient := authv1.NewAuthServiceClient(conn)
+	authServiceClient := authv1.NewAuthServiceClient(authConn)
+	userServiceClient := userv1.NewUserServiceClient(userConn)
 	setRepository := infraset.NewSetRepository(gormDB)
+	workoutRepository := infraworkout.NewWorkoutRepository(gormDB)
 	exerciseRepository := infraexercise.NewExerciseRepository(gormDB)
 	muscleRepository := inframuscle.NewMuscleRepository(gormDB)
 
-	authService := apiauth.NewAuthService(authServiceClient)
-	setUsecase := appset.NewSetUsecase(authService, setRepository, exerciseRepository)
+	_ = apiauth.NewAuthService(authServiceClient)
+	userService := apiuser.NewUserService(userServiceClient)
+	setUsecase := appset.NewSetUsecase(userService, setRepository, workoutRepository, exerciseRepository)
+	workoutUsecase := appworkout.NewWorkoutUsecase(userService, workoutRepository, setRepository)
 	exerciseUsecase := appexercise.NewExerciseUsecase(exerciseRepository)
 	muscleUsecase := appmuscle.NewMuscleUsecase(muscleRepository)
 
 	healthServer := health.NewServer()
 	setHandler := grpcset.NewSetHandler(setUsecase)
+	workoutHandler := grpcworkout.NewWorkoutHandler(workoutUsecase)
 	exerciseHandler := grpcexercise.NewExerciseHandler(exerciseUsecase)
 	muscleHandler := grpcmuscle.NewMuscleHandler(muscleUsecase)
 
 	grpc_health_v1.RegisterHealthServer(server, healthServer)
 	setv1.RegisterSetServiceServer(server, setHandler)
+	workoutv1.RegisterWorkoutServiceServer(server, workoutHandler)
 	exercisev1.RegisterExerciseServiceServer(server, exerciseHandler)
 	musclev1.RegisterMuscleServiceServer(server, muscleHandler)
 
 	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
 	healthServer.SetServingStatus("set", grpc_health_v1.HealthCheckResponse_SERVING)
+	healthServer.SetServingStatus("workout", grpc_health_v1.HealthCheckResponse_SERVING)
 	healthServer.SetServingStatus("exercise", grpc_health_v1.HealthCheckResponse_SERVING)
 	healthServer.SetServingStatus("muscle", grpc_health_v1.HealthCheckResponse_SERVING)
 

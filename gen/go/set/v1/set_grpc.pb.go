@@ -21,6 +21,9 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	SetService_CreateSet_FullMethodName = "/set.v1.SetService/CreateSet"
 	SetService_ListSets_FullMethodName  = "/set.v1.SetService/ListSets"
+	SetService_GetSet_FullMethodName    = "/set.v1.SetService/GetSet"
+	SetService_UpdateSet_FullMethodName = "/set.v1.SetService/UpdateSet"
+	SetService_DeleteSet_FullMethodName = "/set.v1.SetService/DeleteSet"
 )
 
 // SetServiceClient is the client API for SetService service.
@@ -29,6 +32,9 @@ const (
 type SetServiceClient interface {
 	CreateSet(ctx context.Context, in *CreateSetRequest, opts ...grpc.CallOption) (*CreateSetResponse, error)
 	ListSets(ctx context.Context, in *ListSetsRequest, opts ...grpc.CallOption) (*ListSetsResponse, error)
+	GetSet(ctx context.Context, in *GetSetRequest, opts ...grpc.CallOption) (*GetSetResponse, error)
+	UpdateSet(ctx context.Context, in *UpdateSetRequest, opts ...grpc.CallOption) (*UpdateSetResponse, error)
+	DeleteSet(ctx context.Context, in *DeleteSetRequest, opts ...grpc.CallOption) (*DeleteSetResponse, error)
 }
 
 type setServiceClient struct {
@@ -59,12 +65,45 @@ func (c *setServiceClient) ListSets(ctx context.Context, in *ListSetsRequest, op
 	return out, nil
 }
 
+func (c *setServiceClient) GetSet(ctx context.Context, in *GetSetRequest, opts ...grpc.CallOption) (*GetSetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSetResponse)
+	err := c.cc.Invoke(ctx, SetService_GetSet_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *setServiceClient) UpdateSet(ctx context.Context, in *UpdateSetRequest, opts ...grpc.CallOption) (*UpdateSetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateSetResponse)
+	err := c.cc.Invoke(ctx, SetService_UpdateSet_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *setServiceClient) DeleteSet(ctx context.Context, in *DeleteSetRequest, opts ...grpc.CallOption) (*DeleteSetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteSetResponse)
+	err := c.cc.Invoke(ctx, SetService_DeleteSet_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SetServiceServer is the server API for SetService service.
 // All implementations must embed UnimplementedSetServiceServer
 // for forward compatibility.
 type SetServiceServer interface {
 	CreateSet(context.Context, *CreateSetRequest) (*CreateSetResponse, error)
 	ListSets(context.Context, *ListSetsRequest) (*ListSetsResponse, error)
+	GetSet(context.Context, *GetSetRequest) (*GetSetResponse, error)
+	UpdateSet(context.Context, *UpdateSetRequest) (*UpdateSetResponse, error)
+	DeleteSet(context.Context, *DeleteSetRequest) (*DeleteSetResponse, error)
 	mustEmbedUnimplementedSetServiceServer()
 }
 
@@ -80,6 +119,15 @@ func (UnimplementedSetServiceServer) CreateSet(context.Context, *CreateSetReques
 }
 func (UnimplementedSetServiceServer) ListSets(context.Context, *ListSetsRequest) (*ListSetsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListSets not implemented")
+}
+func (UnimplementedSetServiceServer) GetSet(context.Context, *GetSetRequest) (*GetSetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSet not implemented")
+}
+func (UnimplementedSetServiceServer) UpdateSet(context.Context, *UpdateSetRequest) (*UpdateSetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateSet not implemented")
+}
+func (UnimplementedSetServiceServer) DeleteSet(context.Context, *DeleteSetRequest) (*DeleteSetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteSet not implemented")
 }
 func (UnimplementedSetServiceServer) mustEmbedUnimplementedSetServiceServer() {}
 func (UnimplementedSetServiceServer) testEmbeddedByValue()                    {}
@@ -138,6 +186,60 @@ func _SetService_ListSets_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SetService_GetSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SetServiceServer).GetSet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SetService_GetSet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SetServiceServer).GetSet(ctx, req.(*GetSetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SetService_UpdateSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SetServiceServer).UpdateSet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SetService_UpdateSet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SetServiceServer).UpdateSet(ctx, req.(*UpdateSetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SetService_DeleteSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteSetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SetServiceServer).DeleteSet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SetService_DeleteSet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SetServiceServer).DeleteSet(ctx, req.(*DeleteSetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SetService_ServiceDesc is the grpc.ServiceDesc for SetService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +254,18 @@ var SetService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListSets",
 			Handler:    _SetService_ListSets_Handler,
+		},
+		{
+			MethodName: "GetSet",
+			Handler:    _SetService_GetSet_Handler,
+		},
+		{
+			MethodName: "UpdateSet",
+			Handler:    _SetService_UpdateSet_Handler,
+		},
+		{
+			MethodName: "DeleteSet",
+			Handler:    _SetService_DeleteSet_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

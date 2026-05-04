@@ -33,6 +33,35 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
         "tags": [
           "SetService"
         ]
@@ -67,9 +96,123 @@
           "SetService"
         ]
       }
+    },
+    "/v1/sets/{setId}": {
+      "get": {
+        "operationId": "SetService_GetSet",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetSetResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "setId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SetService"
+        ]
+      },
+      "delete": {
+        "operationId": "SetService_DeleteSet",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteSetResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "setId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SetService"
+        ]
+      },
+      "patch": {
+        "operationId": "SetService_UpdateSet",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateSetResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "setId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SetServiceUpdateSetBody"
+            }
+          }
+        ],
+        "tags": [
+          "SetService"
+        ]
+      }
     }
   },
   "definitions": {
+    "SetServiceUpdateSetBody": {
+      "type": "object",
+      "properties": {
+        "exerciseId": {
+          "type": "string"
+        },
+        "rep": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "weight": {
+          "type": "number",
+          "format": "double"
+        },
+        "trainedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -101,6 +244,9 @@
     "v1CreateSetRequest": {
       "type": "object",
       "properties": {
+        "workoutId": {
+          "type": "string"
+        },
         "exerciseId": {
           "type": "string"
         },
@@ -126,6 +272,17 @@
         }
       }
     },
+    "v1DeleteSetResponse": {
+      "type": "object"
+    },
+    "v1GetSetResponse": {
+      "type": "object",
+      "properties": {
+        "set": {
+          "$ref": "#/definitions/v1Set"
+        }
+      }
+    },
     "v1ListSetsResponse": {
       "type": "object",
       "properties": {
@@ -135,6 +292,9 @@
             "type": "object",
             "$ref": "#/definitions/v1Set"
           }
+        },
+        "nextPageToken": {
+          "type": "string"
         }
       }
     },
@@ -142,6 +302,9 @@
       "type": "object",
       "properties": {
         "setId": {
+          "type": "string"
+        },
+        "workoutId": {
           "type": "string"
         },
         "exerciseId": {
@@ -162,6 +325,14 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "v1UpdateSetResponse": {
+      "type": "object",
+      "properties": {
+        "set": {
+          "$ref": "#/definitions/v1Set"
         }
       }
     }
