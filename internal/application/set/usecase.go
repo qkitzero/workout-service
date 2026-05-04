@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/qkitzero/workout-service/internal/application/paging"
 	"github.com/qkitzero/workout-service/internal/application/user"
 	"github.com/qkitzero/workout-service/internal/domain/exercise"
 	"github.com/qkitzero/workout-service/internal/domain/set"
@@ -13,7 +14,12 @@ import (
 
 type SetUsecase interface {
 	CreateSet(ctx context.Context, workoutID workout.WorkoutID, exerciseID exercise.ExerciseID, rep set.Rep, weight set.Weight, trainedAt time.Time) (set.Set, error)
-	ListSets(ctx context.Context) ([]set.Set, error)
+	ListSets(
+		ctx context.Context,
+		from, to *time.Time,
+		pageSize int,
+		pageToken string,
+	) ([]set.Set, string, error)
 	GetSet(ctx context.Context, id set.SetID) (set.Set, error)
 	UpdateSet(ctx context.Context, id set.SetID, exerciseID exercise.ExerciseID, rep set.Rep, weight set.Weight, trainedAt time.Time) (set.Set, error)
 	DeleteSet(ctx context.Context, id set.SetID) error
@@ -69,23 +75,65 @@ func (u *setUsecase) CreateSet(ctx context.Context, workoutID workout.WorkoutID,
 	return newSet, nil
 }
 
-func (u *setUsecase) ListSets(ctx context.Context) ([]set.Set, error) {
+func (u *setUsecase) ListSets(
+	ctx context.Context,
+	from, to *time.Time,
+	pageSize int,
+	pageToken string,
+) ([]set.Set, string, error) {
+	const (
+		defaultPageSize = 50
+		maxPageSize     = 100
+	)
+	type cursor struct {
+		TrainedAt time.Time `json:"t"`
+		SetID     set.SetID `json:"s"`
+	}
+
 	userID, err := u.userService.GetUser(ctx)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	newUserID, err := domainuser.NewUserID(userID)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	sets, err := u.setRepo.FindByUserID(ctx, newUserID)
+	if pageSize <= 0 {
+		pageSize = defaultPageSize
+	}
+	if pageSize > maxPageSize {
+		pageSize = maxPageSize
+	}
+
+	var cursorTrainedAt *time.Time
+	var cursorSetID *set.SetID
+	if pageToken != "" {
+		c, err := paging.DecodeCursor[cursor](pageToken)
+		if err != nil {
+			return nil, "", err
+		}
+		cursorTrainedAt = &c.TrainedAt
+		cursorSetID = &c.SetID
+	}
+
+	sets, err := u.setRepo.FindByUserID(ctx, newUserID, from, to, pageSize+1, cursorTrainedAt, cursorSetID)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return sets, nil
+	var nextToken string
+	if len(sets) > pageSize {
+		last := sets[pageSize-1]
+		nextToken, err = paging.EncodeCursor(cursor{TrainedAt: last.TrainedAt(), SetID: last.ID()})
+		if err != nil {
+			return nil, "", err
+		}
+		sets = sets[:pageSize]
+	}
+
+	return sets, nextToken, nil
 }
 
 func (u *setUsecase) GetSet(ctx context.Context, id set.SetID) (set.Set, error) {

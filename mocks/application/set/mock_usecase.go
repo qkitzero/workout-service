@@ -89,18 +89,19 @@ func (mr *MockSetUsecaseMockRecorder) GetSet(ctx, id any) *gomock.Call {
 }
 
 // ListSets mocks base method.
-func (m *MockSetUsecase) ListSets(ctx context.Context) ([]set.Set, error) {
+func (m *MockSetUsecase) ListSets(ctx context.Context, from, to *time.Time, pageSize int, pageToken string) ([]set.Set, string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListSets", ctx)
+	ret := m.ctrl.Call(m, "ListSets", ctx, from, to, pageSize, pageToken)
 	ret0, _ := ret[0].([]set.Set)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // ListSets indicates an expected call of ListSets.
-func (mr *MockSetUsecaseMockRecorder) ListSets(ctx any) *gomock.Call {
+func (mr *MockSetUsecaseMockRecorder) ListSets(ctx, from, to, pageSize, pageToken any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSets", reflect.TypeOf((*MockSetUsecase)(nil).ListSets), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSets", reflect.TypeOf((*MockSetUsecase)(nil).ListSets), ctx, from, to, pageSize, pageToken)
 }
 
 // UpdateSet mocks base method.

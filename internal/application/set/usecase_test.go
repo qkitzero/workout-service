@@ -9,6 +9,7 @@ import (
 
 	"go.uber.org/mock/gomock"
 
+	"github.com/qkitzero/workout-service/internal/application/paging"
 	"github.com/qkitzero/workout-service/internal/domain/exercise"
 	"github.com/qkitzero/workout-service/internal/domain/set"
 	"github.com/qkitzero/workout-service/internal/domain/user"
@@ -281,18 +282,87 @@ func TestDeleteSet(t *testing.T) {
 
 func TestListSets(t *testing.T) {
 	t.Parallel()
+	validUserID := "fe8c2263-bbac-4bb9-a41d-b04f5afc4425"
+
+	mockSetSample := func(ctrl *gomock.Controller, trainedAt time.Time) *mocksset.MockSet {
+		m := mocksset.NewMockSet(ctrl)
+		m.EXPECT().ID().Return(set.NewSetID()).AnyTimes()
+		m.EXPECT().TrainedAt().Return(trainedAt).AnyTimes()
+		return m
+	}
+
+	validPageToken, err := paging.EncodeCursor(struct {
+		TrainedAt time.Time `json:"t"`
+		SetID     set.SetID `json:"s"`
+	}{TrainedAt: time.Date(2024, 1, 10, 0, 0, 0, 0, time.UTC), SetID: set.NewSetID()})
+	if err != nil {
+		t.Fatalf("encode cursor: %v", err)
+	}
+
 	tests := []struct {
 		name            string
 		success         bool
 		ctx             context.Context
 		userID          string
 		getUserErr      error
+		pageSize        int
+		pageToken       string
+		repoResult      func(ctrl *gomock.Controller) []set.Set
 		findByUserIDErr error
+		wantNextToken   bool
 	}{
-		{"success list sets", true, context.Background(), "fe8c2263-bbac-4bb9-a41d-b04f5afc4425", nil, nil},
-		{"failure get user error", false, context.Background(), "", fmt.Errorf("get user error"), nil},
-		{"failure empty user id", false, context.Background(), "", nil, nil},
-		{"failure find by user id error", false, context.Background(), "fe8c2263-bbac-4bb9-a41d-b04f5afc4425", nil, errors.New("find by user id error")},
+		{
+			name:       "success list sets",
+			success:    true,
+			ctx:        context.Background(),
+			userID:     validUserID,
+			pageSize:   10,
+			repoResult: func(ctrl *gomock.Controller) []set.Set { return []set.Set{} },
+		},
+		{
+			name:       "success default page size",
+			success:    true,
+			ctx:        context.Background(),
+			userID:     validUserID,
+			pageSize:   0,
+			repoResult: func(ctrl *gomock.Controller) []set.Set { return []set.Set{} },
+		},
+		{
+			name:       "success page size clamped to max",
+			success:    true,
+			ctx:        context.Background(),
+			userID:     validUserID,
+			pageSize:   1000,
+			repoResult: func(ctrl *gomock.Controller) []set.Set { return []set.Set{} },
+		},
+		{
+			name:       "success with valid page token",
+			success:    true,
+			ctx:        context.Background(),
+			userID:     validUserID,
+			pageSize:   10,
+			pageToken:  validPageToken,
+			repoResult: func(ctrl *gomock.Controller) []set.Set { return []set.Set{} },
+		},
+		{
+			name:     "success with next page token",
+			success:  true,
+			ctx:      context.Background(),
+			userID:   validUserID,
+			pageSize: 2,
+			repoResult: func(ctrl *gomock.Controller) []set.Set {
+				return []set.Set{
+					mockSetSample(ctrl, time.Date(2024, 1, 3, 0, 0, 0, 0, time.UTC)),
+					mockSetSample(ctrl, time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC)),
+					mockSetSample(ctrl, time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+				}
+			},
+			wantNextToken: true,
+		},
+		{"failure get user error", false, context.Background(), "", fmt.Errorf("get user error"), 10, "", func(ctrl *gomock.Controller) []set.Set { return nil }, nil, false},
+		{"failure empty user id", false, context.Background(), "", nil, 10, "", func(ctrl *gomock.Controller) []set.Set { return nil }, nil, false},
+		{"failure find by user id error", false, context.Background(), validUserID, nil, 10, "", func(ctrl *gomock.Controller) []set.Set { return nil }, errors.New("find by user id error"), false},
+		{"failure invalid page token", false, context.Background(), validUserID, nil, 10, "!!!not-base64!!!", func(ctrl *gomock.Controller) []set.Set { return nil }, nil, false},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -307,16 +377,24 @@ func TestListSets(t *testing.T) {
 			mockWorkoutRepository := mocksworkout.NewMockWorkoutRepository(ctrl)
 			mockExerciseRepository := mocksexercise.NewMockExerciseRepository(ctrl)
 			mockUserService.EXPECT().GetUser(tt.ctx).Return(tt.userID, tt.getUserErr).AnyTimes()
-			mockSetRepository.EXPECT().FindByUserID(gomock.Any(), gomock.Any()).Return([]set.Set{}, tt.findByUserIDErr).AnyTimes()
+			mockSetRepository.EXPECT().FindByUserID(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tt.repoResult(ctrl), tt.findByUserIDErr).AnyTimes()
 
 			u := NewSetUsecase(mockUserService, mockSetRepository, mockWorkoutRepository, mockExerciseRepository)
 
-			_, err := u.ListSets(tt.ctx)
+			_, nextToken, err := u.ListSets(tt.ctx, nil, nil, tt.pageSize, tt.pageToken)
 			if tt.success && err != nil {
 				t.Errorf("expected no error, but got %v", err)
 			}
 			if !tt.success && err == nil {
 				t.Errorf("expected error, but got nil")
+			}
+			if tt.success {
+				if tt.wantNextToken && nextToken == "" {
+					t.Errorf("expected next token, got empty")
+				}
+				if !tt.wantNextToken && nextToken != "" {
+					t.Errorf("expected empty next token, got %q", nextToken)
+				}
 			}
 		})
 	}
